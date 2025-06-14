@@ -42,6 +42,13 @@ android {
 }
 
 dependencies {
+    // Flutterの基本動作に必要なKotlinの標準ライブラリ
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")
+    
+    // 日本語OCR機能に必要なGoogle ML Kitライブラリ
+    implementation("com.google.mlkit:text-recognition-japanese:16.0.0")
+    
+    // Javaの新しい機能に対応するためのライブラリ
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
 

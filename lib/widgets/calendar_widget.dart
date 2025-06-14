@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class CalendarWidget extends StatelessWidget {
-  final void Function(DateTime)? onDaySelected;
+  final void Function(DateTime, DateTime)? onDaySelected;
   final DateTime selectedDay;
   final DateTime focusedDay;
   final Map<DateTime, List<Map<String, String>>> events;
@@ -76,7 +76,7 @@ class CalendarWidget extends StatelessWidget {
           selectedDayPredicate: (day) => isSameDay(selectedDay, day),
           calendarFormat: CalendarFormat.week,
           onDaySelected: (selected, focused) {
-            onDaySelected?.call(selected);
+            onDaySelected?.call(selected, focused);
           },
           rowHeight: 240,
           headerStyle: HeaderStyle(

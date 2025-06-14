@@ -10,18 +10,26 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_lints: ^5.0.0
-  tesseract_ocr: ^0.4.1  # OCR機能
+  flutter_riverpod: ^2.5.1
   table_calendar: ^3.0.9                 # カレンダー表示
   shared_preferences: ^2.2.2             # ローカル保存
-  flutter_local_notifications: ^15.1.1   # 通知機能
+  flutter_local_notifications: ^17.1.2   # 通知機能
+  google_mlkit_text_recognition: ^0.11.0 # Google ML Kitによるテキスト認識
   image_picker: ^1.1.0                   # 写真を取り込む
   intl: ^0.20.2                           # 日付・多言語
   flutter_localizations:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1 # アイコン設定
 
 flutter:
   uses-material-design: true
 
   assets:
+    - tessdata/
     - assets/tessdata_config.json
-    - assets/tessdata/jpn.traineddata
+
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/icon/icon.png"
+  adaptive_icon_background: "#FFFFFF" # 背景色
+  adaptive_icon_foreground: "assets/icon/icon.png" # 前景画像

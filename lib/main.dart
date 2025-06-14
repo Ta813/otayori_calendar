@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/home_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
   // 日本語ロケールをデフォルトに設定（DateFormat で日本語表示をしたい場合）
   Intl.defaultLocale = 'ja_JP';
-  runApp(const OtayoriPocketApp());
+  runApp(const ProviderScope(child: OtayoriPocketApp()));
 }
 
 class OtayoriPocketApp extends StatelessWidget {
