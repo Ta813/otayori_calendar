@@ -22,7 +22,7 @@ class _ImportOtayoriScreenState extends ConsumerState<ImportOtayoriScreen> {
   bool _isProcessing = false; // 処理中フラグを追加
   final picker = ImagePicker();
 
-  static const String aPIKey = "AIzaSyDRzBoIw4gqjwL1pbAPVJS_aVx3NJZxwfs";
+  static const String aPIKey = "";
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await picker.pickImage(source: source);
