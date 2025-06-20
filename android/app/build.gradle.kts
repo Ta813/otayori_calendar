@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.otayori_calendar"
+    namespace = "com.kotoapp.otayori_calendar"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.otayori_calendar"
+        applicationId = "com.kotoapp.otayori_calendar"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -39,17 +39,6 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-}
-
-dependencies {
-    // Flutterの基本動作に必要なKotlinの標準ライブラリ
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22")
-    
-    // 日本語OCR機能に必要なGoogle ML Kitライブラリ
-    implementation("com.google.mlkit:text-recognition-japanese:16.0.0")
-    
-    // Javaの新しい機能に対応するためのライブラリ
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
 
 flutter {

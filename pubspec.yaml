@@ -14,7 +14,7 @@ dependencies:
   table_calendar: ^3.0.9                 # カレンダー表示
   shared_preferences: ^2.2.2             # ローカル保存
   flutter_local_notifications: ^17.1.2   # 通知機能
-  google_mlkit_text_recognition: ^0.11.0 # Google ML Kitによるテキスト認識
+  google_generative_ai: ^0.4.0 # Google AI
   image_picker: ^1.1.0                   # 写真を取り込む
   intl: ^0.20.2                           # 日付・多言語
   flutter_localizations:
@@ -25,8 +25,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - tessdata/
-    - assets/tessdata_config.json
+    - .env
 
 flutter_launcher_icons:
   android: true
