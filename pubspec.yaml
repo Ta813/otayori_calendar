@@ -20,6 +20,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_launcher_icons: ^0.13.1 # アイコン設定
+  flutter_dotenv: ^5.0.2
 
 flutter:
   uses-material-design: true

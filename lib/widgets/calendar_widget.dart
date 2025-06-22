@@ -78,7 +78,6 @@ class CalendarWidget extends StatelessWidget {
           onDaySelected: (selected, focused) {
             onDaySelected?.call(selected, focused);
           },
-          rowHeight: 240,
           headerStyle: HeaderStyle(
             formatButtonVisible: false,
             titleCentered: true,

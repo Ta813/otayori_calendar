@@ -3,10 +3,15 @@ import 'package:intl/intl.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'screens/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 
-void main() {
+void main() async {
   // 日本語ロケールをデフォルトに設定（DateFormat で日本語表示をしたい場合）
   Intl.defaultLocale = 'ja_JP';
+  if (!kIsWeb) {
+    await dotenv.load(fileName: ".env");
+  }
   runApp(const ProviderScope(child: OtayoriPocketApp()));
 }
 

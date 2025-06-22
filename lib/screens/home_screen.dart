@@ -57,21 +57,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(title: const Text('おたよりカレンダー')),
       body: Column(
         children: [
-          SizedBox(
-            height: 320,
-            child: CalendarWidget(
-              selectedDay: _selectedDate,
-              focusedDay: _focusedDay,
-              onDaySelected: (selectedDate, focusedDay) {
-                // 日付が選択されたら、UIの状態を更新
-                setState(() {
-                  _selectedDate = selectedDate;
-                  _focusedDay = focusedDay;
-                });
-              },
-              // ★★★ ここで変換したデータを渡す ★★★
-              events: eventsForCalendar,
-            ),
+          CalendarWidget(
+            selectedDay: _selectedDate,
+            focusedDay: _focusedDay,
+            onDaySelected: (selectedDate, focusedDay) {
+              // 日付が選択されたら、UIの状態を更新
+              setState(() {
+                _selectedDate = selectedDate;
+                _focusedDay = focusedDay;
+              });
+            },
+            // ★★★ ここで変換したデータを渡す ★★★
+            events: eventsForCalendar,
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
