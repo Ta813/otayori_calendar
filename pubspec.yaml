@@ -1,35 +1,43 @@
 name: otayori_calendar
 description: "A new Flutter project."
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.7.2
+  sdk: '>=3.4.0 <4.0.0' # Flutter 3.22以降の推奨SDKバージョン
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_lints: ^5.0.0
-  flutter_riverpod: ^2.5.1
-  table_calendar: ^3.0.9                 # カレンダー表示
-  shared_preferences: ^2.2.2             # ローカル保存
-  flutter_local_notifications: ^17.1.2   # 通知機能
-  google_generative_ai: ^0.4.0 # Google AI
-  image_picker: ^1.1.0                   # 写真を取り込む
-  intl: ^0.20.2                           # 日付・多言語
   flutter_localizations:
     sdk: flutter
-  flutter_launcher_icons: ^0.13.1 # アイコン設定
-  flutter_dotenv: ^5.0.2
+
+  flutter_riverpod: ^2.5.1
+  table_calendar: ^3.1.1
+  shared_preferences: ^2.2.3
+  flutter_local_notifications: ^17.1.2
+  google_generative_ai: ^0.4.0
+  image_picker: ^1.1.2
+  intl: ^0.20.2 
+  flutter_dotenv: ^5.1.0
+  path_provider: ^2.1.3
+  path: ^1.9.0
+  cunning_document_scanner: ^1.1.2
+  uuid: ^4.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
-
   assets:
     - .env
 
 flutter_launcher_icons:
   android: true
   image_path: "assets/icon/icon.png"
-  adaptive_icon_background: "#FFFFFF" # 背景色
-  adaptive_icon_foreground: "assets/icon/icon.png" # 前景画像
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/icon.png"

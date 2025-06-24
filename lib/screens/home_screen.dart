@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 import '../models/otayori_event.dart'; // 作成したモデルをインポート
 import '../providers/otayori_provider.dart'; // 作成したProviderをインポート
 import '../widgets/calendar_widget.dart';
-import 'import_otayori_screen.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'otayori_list_screen.dart';
 
 // StatefulWidget -> ConsumerStatefulWidget に変更
 class HomeScreen extends ConsumerStatefulWidget {
@@ -85,14 +85,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          // OtayoriListScreenに画面遷移する
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const ImportOtayoriScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const OtayoriListScreen()),
           );
         },
-        tooltip: 'おたよりを追加',
+        tooltip: 'おたより一覧を見る',
         child: const Icon(Icons.add),
       ),
     );
