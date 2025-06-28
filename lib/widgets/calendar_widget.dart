@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CalendarWidget extends StatelessWidget {
+import '../models/child.dart';
+import '../models/otayori_event.dart';
+import '../providers/child_provider.dart';
+import '../providers/otayori_event_provider.dart';
+
+class CalendarWidget extends ConsumerWidget {
   final void Function(DateTime, DateTime)? onDaySelected;
   final DateTime selectedDay;
   final DateTime focusedDay;
@@ -20,107 +26,145 @@ class CalendarWidget extends StatelessWidget {
     'イベント': Colors.orange,
   };
 
-  List<Map<String, String>> _getEventsForDay(DateTime day) {
-    return events[DateTime(day.year, day.month, day.day)] ?? [];
-  }
+  Widget _buildCellContent(BuildContext context, WidgetRef ref, DateTime day,
+      List<OtayoriEvent> events, TextStyle dayTextStyle) {
+    final gyojiEvents =
+        events.where((event) => event.category == '行事').toList();
 
-  Widget _buildDayCell(
-    DateTime day,
-    List<Map<String, String>> eventsForDay, {
-    Color? backgroundColor,
-    Color borderColor = Colors.grey,
-    double? cellWidth,
-  }) {
-    return Container(
-      width: cellWidth, // ★ 横幅固定
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border.all(color: borderColor),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 6.0),
+    return Padding(
+      padding: const EdgeInsets.all(2.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
+          // 日付の数字
           Text(
             '${day.day}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: dayTextStyle,
           ),
-          ...eventsForDay.take(10).map((event) {
-            final category = event['category'] ?? '';
-            final title = event['title'] ?? '';
-            final color = categoryColors[category] ?? Colors.black;
+          const SizedBox(height: 2),
+          // 行事テキストを表示する部分
+          Expanded(
+            child: ListView(
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              children: gyojiEvents.map((event) {
+                final children = ref.read(childProvider);
+                final child = children.firstWhere(
+                  (c) => c.id == event.childId,
+                  orElse: () => Child(id: '', name: '', color: Colors.grey),
+                );
 
-            return Text(
-              title,
-              style: TextStyle(fontSize: 9, backgroundColor: color),
-              overflow: TextOverflow.ellipsis,
-            );
-          }),
-          if (eventsForDay.length > 10)
-            const Text('…', style: TextStyle(fontSize: 8)),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 2.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 2.0, vertical: 1.0),
+                  decoration: BoxDecoration(
+                    color: child.color,
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  child: Text(
+                    event.title,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    const defaultTextStyle = TextStyle(fontSize: 14, color: Colors.black);
+    const highlightedTextStyle =
+        TextStyle(fontSize: 14, color: Colors.white); // 背景色がつく日のテキスト色
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cellWidth = constraints.maxWidth / 7; // 7日分で均等割り
-
         return TableCalendar(
           firstDay: DateTime.utc(2024, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),
           focusedDay: focusedDay,
+          rowHeight: 100.0,
+
+          //イベントローダーで、日付ごとのイベントリストを取得
+          eventLoader: (day) {
+            // ref.watchで全イベントリストを取得
+            final allEvents = ref.watch(otayoriEventProvider);
+            // その日のイベントだけをフィルタリングして返す
+            return allEvents
+                .where((event) => isSameDay(event.date, day))
+                .toList();
+          },
+
           selectedDayPredicate: (day) => isSameDay(selectedDay, day),
           calendarFormat: CalendarFormat.week,
           onDaySelected: (selected, focused) {
             onDaySelected?.call(selected, focused);
           },
-          headerStyle: HeaderStyle(
-            formatButtonVisible: false,
-            titleCentered: true,
-          ),
           daysOfWeekStyle: DaysOfWeekStyle(
             weekendStyle: TextStyle(
               color: Colors.red.shade700,
               fontWeight: FontWeight.bold,
             ),
           ),
-          calendarStyle: const CalendarStyle(
-            cellMargin: EdgeInsets.zero, // セル間余白なし
-          ),
           calendarBuilders: CalendarBuilders(
+            // 通常の日のビルダー
             defaultBuilder: (context, day, focusedDay) {
-              final eventsForDay = _getEventsForDay(day);
-              return _buildDayCell(
-                day,
-                eventsForDay,
-                backgroundColor: Colors.transparent,
-                borderColor: Colors.grey,
-                cellWidth: cellWidth,
-              );
+              final events = ref
+                  .read(otayoriEventProvider)
+                  .where((e) => isSameDay(e.date, day))
+                  .toList();
+              // 背景なし、黒文字でコンテンツを生成
+              return _buildCellContent(
+                  context, ref, day, events, defaultTextStyle);
             },
-            selectedBuilder: (context, day, focusedDay) {
-              final eventsForDay = _getEventsForDay(day);
-              return _buildDayCell(
-                day,
-                eventsForDay,
-                backgroundColor: Colors.blue[100],
-                borderColor: Colors.blue,
-                cellWidth: cellWidth,
-              );
-            },
+
+            // 今日の日のビルダー
             todayBuilder: (context, day, focusedDay) {
-              final eventsForDay = _getEventsForDay(day);
-              return _buildDayCell(
-                day,
-                eventsForDay,
-                backgroundColor: Colors.green[100],
-                borderColor: Colors.green,
-                cellWidth: cellWidth,
+              final events = ref
+                  .read(otayoriEventProvider)
+                  .where((e) => isSameDay(e.date, day))
+                  .toList();
+              // 緑の背景を持つコンテナでラップする
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.3), // 少し薄い緑
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: _buildCellContent(
+                    context, ref, day, events, defaultTextStyle), // 文字は黒のまま
               );
+            },
+
+            // 選択した日のビルダー
+            selectedBuilder: (context, day, focusedDay) {
+              final events = ref
+                  .read(otayoriEventProvider)
+                  .where((e) => isSameDay(e.date, day))
+                  .toList();
+              // 青の背景を持つコンテナでラップする
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                // 背景が濃いので、文字は白にする
+                child: _buildCellContent(
+                    context, ref, day, events, highlightedTextStyle),
+              );
+            },
+            markerBuilder: (context, date, events) {
+              // 空のWidgetを返してマーカーを描画しないようにする
+              return Container();
             },
           ),
         );

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart'; // uuidパッケージをインポート
 import 'package:shared_preferences/shared_preferences.dart';
+import 'otayori_event_provider.dart';
 
 import '../models/otayori_image.dart'; // 作成したモデルをインポート
 
@@ -30,12 +31,13 @@ class OtayoriImageNotifier extends StateNotifier<List<OtayoriImage>> {
   }
 
   // addImageメソッドを修正
-  void addImage(String path) async {
+  void addImage(String path, String childId) async {
     // 新しいOtayoriImageオブジェクトを作成
     final newImage = OtayoriImage(
       id: _uuid.v4(), // v4メソッドでユニークなIDを生成
       imagePath: path,
       savedDate: DateTime.now(), // 現在日時を保存日として設定
+      childId: childId,
     );
 
     // 同じパスの画像が既になければリストに追加
@@ -48,8 +50,8 @@ class OtayoriImageNotifier extends StateNotifier<List<OtayoriImage>> {
   Future<void> removeImage(String id) async {
     // 1. 削除対象のOtayoriImageオブジェクトを探す
     final imageToRemove = state.firstWhere((image) => image.id == id,
-        orElse: () =>
-            OtayoriImage(id: '', imagePath: '', savedDate: DateTime.now()));
+        orElse: () => OtayoriImage(
+            id: '', imagePath: '', savedDate: DateTime.now(), childId: ''));
 
     // 見つからなければ何もしない
     if (imageToRemove.id.isEmpty) return;
@@ -80,4 +82,5 @@ final otayoriImageProvider =
 final initializationProvider = FutureProvider<void>((ref) async {
   // otayoriImageProviderのNotifierにアクセスし、loadImagesメソッドを呼び出す
   await ref.read(otayoriImageProvider.notifier).loadImages();
+  await ref.read(otayoriEventProvider.notifier).loadEvents();
 });

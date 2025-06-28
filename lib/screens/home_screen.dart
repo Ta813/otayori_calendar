@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart'; // riverpodをインポ
 import 'package:intl/intl.dart';
 
 import '../models/otayori_event.dart'; // 作成したモデルをインポート
-import '../providers/otayori_provider.dart'; // 作成したProviderをインポート
+import '../providers/otayori_event_provider.dart'; // 作成したProviderをインポート
 import '../widgets/calendar_widget.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'otayori_list_screen.dart';
@@ -100,10 +100,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // 選択された日のイベントリストを表示するウィジェット
   Widget _buildEventList(List<OtayoriEvent> allEvents) {
     // allEventsから、選択されている日付のイベントのみを絞り込む
-    final selectedDayEvents =
-        allEvents.where((event) {
-          return isSameDay(event.date, _selectedDate);
-        }).toList();
+    final selectedDayEvents = allEvents.where((event) {
+      return isSameDay(event.date, _selectedDate);
+    }).toList();
 
     if (selectedDayEvents.isEmpty) {
       return const Center(child: Text('この日のおたよりはありません。'));
