@@ -6,6 +6,7 @@ import '../models/otayori_event.dart'; // 作成したモデルをインポー�
 import '../providers/otayori_event_provider.dart'; // 作成したProviderをインポート
 import '../widgets/calendar_widget.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'add_child_screen.dart';
 import 'otayori_list_screen.dart';
 
 // StatefulWidget -> ConsumerStatefulWidget に変更
@@ -54,7 +55,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // --- 変換処理ここまで ---
 
     return Scaffold(
-      appBar: AppBar(title: const Text('おたよりカレンダー')),
+      appBar: AppBar(
+        title: const Text('おたよりカレンダー'),
+        actions: [
+          // ★★★ このボタンを追加 ★★★
+          IconButton(
+            icon: const Icon(Icons.person_add_alt_1),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AddChildScreen(),
+                ),
+              );
+            },
+            tooltip: 'こどもを追加',
+          ),
+        ],
+      ),
       body: Column(
         children: [
           CalendarWidget(

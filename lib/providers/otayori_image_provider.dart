@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart'; // uuidパッケージをインポート
 import 'package:shared_preferences/shared_preferences.dart';
+import 'child_provider.dart';
 import 'otayori_event_provider.dart';
 
 import '../models/otayori_image.dart'; // 作成したモデルをインポート
@@ -83,4 +84,5 @@ final initializationProvider = FutureProvider<void>((ref) async {
   // otayoriImageProviderのNotifierにアクセスし、loadImagesメソッドを呼び出す
   await ref.read(otayoriImageProvider.notifier).loadImages();
   await ref.read(otayoriEventProvider.notifier).loadEvents();
+  await ref.read(childProvider.notifier).loadChildren();
 });
