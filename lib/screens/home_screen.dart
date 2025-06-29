@@ -8,6 +8,8 @@ import '../widgets/calendar_widget.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'add_child_screen.dart';
 import 'otayori_list_screen.dart';
+import '../dialogs/add_event_dialog.dart';
+import '../providers/child_provider.dart'; // こども情報のProviderをインポート
 
 // StatefulWidget -> ConsumerStatefulWidget に変更
 class HomeScreen extends ConsumerStatefulWidget {
@@ -58,7 +60,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const Text('おたよりカレンダー'),
         actions: [
-          // ★★★ このボタンを追加 ★★★
           IconButton(
             icon: const Icon(Icons.person_add_alt_1),
             onPressed: () {
@@ -69,6 +70,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               );
             },
             tooltip: 'こどもを追加',
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit_calendar_outlined), // アイコンを変更
+            tooltip: '予定を手動で追加',
+            onPressed: () {
+              final children = ref.read(childProvider);
+              if (children.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('先にお子さんを登録してください')),
+                );
+                return;
+              }
+
+              // ダイアログを表示する
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return AddEventDialog(
+                    // 状態として保持している _selectedDate を渡す
+                    selectedDate: _selectedDate,
+                    children: children,
+                  );
+                },
+              );
+            },
           ),
         ],
       ),

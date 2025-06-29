@@ -43,6 +43,14 @@ class OtayoriEventNotifier extends StateNotifier<List<OtayoriEvent>> {
     state = [...state, newEvent];
     await _saveEvents();
   }
+
+  // 複数のイベントを一括で追加するメソッド
+  Future<void> addMultipleEvents(List<OtayoriEvent> events) async {
+    // 既存のリストと新しいイベントのリストを結合
+    state = [...state, ...events];
+    // 最後に一度だけ保存処理を呼ぶ
+    await _saveEvents();
+  }
 }
 
 // このProviderを介してUIがNotifierにアクセスする
