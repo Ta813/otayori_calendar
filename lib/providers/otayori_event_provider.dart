@@ -51,6 +51,14 @@ class OtayoriEventNotifier extends StateNotifier<List<OtayoriEvent>> {
     // 最後に一度だけ保存処理を呼ぶ
     await _saveEvents();
   }
+
+  /// IDを指定してイベントを削除するメソッド
+  Future<void> removeEvent(String eventId) async {
+    // 指定されたID以外のイベントで新しいリストを再構築する
+    state = state.where((event) => event.id != eventId).toList();
+    // 変更を永続化する
+    await _saveEvents();
+  }
 }
 
 // このProviderを介してUIがNotifierにアクセスする

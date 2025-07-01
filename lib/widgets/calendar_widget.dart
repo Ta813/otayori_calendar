@@ -5,31 +5,39 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/child.dart';
 import '../models/otayori_event.dart';
 import '../providers/child_provider.dart';
-import '../providers/otayori_event_provider.dart';
 
 class CalendarWidget extends ConsumerWidget {
   final void Function(DateTime, DateTime)? onDaySelected;
   final DateTime selectedDay;
   final DateTime focusedDay;
-  final Map<DateTime, List<Map<String, String>>> events;
+  final Map<DateTime, List<OtayoriEvent>> events;
+  final void Function(DateTime)? onPageChanged;
 
   CalendarWidget({
     Key? key,
     required this.onDaySelected,
     required this.selectedDay,
+    this.onPageChanged,
     required this.focusedDay,
     required this.events,
   }) : super(key: key);
 
-  final Map<String, Color> categoryColors = {
-    '準備物': Colors.green,
-    'イベント': Colors.orange,
-  };
-
   Widget _buildCellContent(BuildContext context, WidgetRef ref, DateTime day,
       List<OtayoriEvent> events, TextStyle dayTextStyle) {
-    final gyojiEvents =
-        events.where((event) => event.category == '行事').toList();
+    // 1. 全ての子供のリストを取得（これが基準の並び順になる）
+    final allChildren = ref.read(childProvider);
+
+    // 2. 受け取ったイベントリストを、子供の並び順を元にソートする
+    events.sort((eventA, eventB) {
+      // 3. 各イベントの子供が、全子供リストの何番目にいるかを取得
+      final indexA =
+          allChildren.indexWhere((child) => child.id == eventA.childId);
+      final indexB =
+          allChildren.indexWhere((child) => child.id == eventB.childId);
+
+      // 4. インデックス番号を比較して並び順を決定する
+      return indexA.compareTo(indexB);
+    });
 
     return Padding(
       padding: const EdgeInsets.all(2.0),
@@ -42,14 +50,13 @@ class CalendarWidget extends ConsumerWidget {
             style: dayTextStyle,
           ),
           const SizedBox(height: 2),
-          // 行事テキストを表示する部分
+          // テキストを表示する部分
           Expanded(
             child: ListView(
               physics: const NeverScrollableScrollPhysics(),
               padding: EdgeInsets.zero,
-              children: gyojiEvents.map((event) {
-                final children = ref.read(childProvider);
-                final child = children.firstWhere(
+              children: events.map((event) {
+                final child = allChildren.firstWhere(
                   (c) => c.id == event.childId,
                   orElse: () => Child(id: '', name: '', color: Colors.grey),
                 );
@@ -94,15 +101,17 @@ class CalendarWidget extends ConsumerWidget {
           lastDay: DateTime.utc(2030, 12, 31),
           focusedDay: focusedDay,
           rowHeight: 100.0,
-
+          headerStyle: const HeaderStyle(
+            // 週/月 切り替えボタンを非表示にする
+            formatButtonVisible: false,
+            // ついでにタイトルも中央寄せに
+            titleCentered: true,
+          ),
+          onPageChanged: onPageChanged,
           //イベントローダーで、日付ごとのイベントリストを取得
           eventLoader: (day) {
-            // ref.watchで全イベントリストを取得
-            final allEvents = ref.watch(otayoriEventProvider);
-            // その日のイベントだけをフィルタリングして返す
-            return allEvents
-                .where((event) => isSameDay(event.date, day))
-                .toList();
+            final dateKey = DateTime.utc(day.year, day.month, day.day);
+            return events[dateKey] ?? [];
           },
 
           selectedDayPredicate: (day) => isSameDay(selectedDay, day),
@@ -119,38 +128,32 @@ class CalendarWidget extends ConsumerWidget {
           calendarBuilders: CalendarBuilders(
             // 通常の日のビルダー
             defaultBuilder: (context, day, focusedDay) {
-              final events = ref
-                  .read(otayoriEventProvider)
-                  .where((e) => isSameDay(e.date, day))
-                  .toList();
+              final dateKey = DateTime.utc(day.year, day.month, day.day);
+              final dailyEvents = events[dateKey] ?? []; // マップから取得
               // 背景なし、黒文字でコンテンツを生成
               return _buildCellContent(
-                  context, ref, day, events, defaultTextStyle);
+                  context, ref, day, dailyEvents, defaultTextStyle);
             },
 
             // 今日の日のビルダー
             todayBuilder: (context, day, focusedDay) {
-              final events = ref
-                  .read(otayoriEventProvider)
-                  .where((e) => isSameDay(e.date, day))
-                  .toList();
+              final dateKey = DateTime.utc(day.year, day.month, day.day);
+              final dailyEvents = events[dateKey] ?? []; // マップから取得
               // 緑の背景を持つコンテナでラップする
               return Container(
                 decoration: BoxDecoration(
                   color: Colors.green.withOpacity(0.3), // 少し薄い緑
                   borderRadius: BorderRadius.circular(8.0),
                 ),
-                child: _buildCellContent(
-                    context, ref, day, events, defaultTextStyle), // 文字は黒のまま
+                child: _buildCellContent(context, ref, day, dailyEvents,
+                    defaultTextStyle), // 文字は黒のまま
               );
             },
 
             // 選択した日のビルダー
             selectedBuilder: (context, day, focusedDay) {
-              final events = ref
-                  .read(otayoriEventProvider)
-                  .where((e) => isSameDay(e.date, day))
-                  .toList();
+              final dateKey = DateTime.utc(day.year, day.month, day.day);
+              final dailyEvents = events[dateKey] ?? []; // マップから取得
               // 青の背景を持つコンテナでラップする
               return Container(
                 decoration: BoxDecoration(
@@ -159,7 +162,7 @@ class CalendarWidget extends ConsumerWidget {
                 ),
                 // 背景が濃いので、文字は白にする
                 child: _buildCellContent(
-                    context, ref, day, events, highlightedTextStyle),
+                    context, ref, day, dailyEvents, highlightedTextStyle),
               );
             },
             markerBuilder: (context, date, events) {
