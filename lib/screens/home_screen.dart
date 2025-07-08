@@ -36,21 +36,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     // データが更新されると、このウィジェットは自動的に再描画される
     final List<OtayoriEvent> allEvents = ref.watch(otayoriEventProvider);
 
-    print('--- 画面の再描画が走りました ---');
-    print('現在の表示モード: $_displayMode');
-
     // 選択中のカテゴリでイベントを絞り込む
     final String selectedCategory =
         _displayMode == CalendarDisplayMode.event ? '行事' : '準備物';
 
-    print('選択中のカテゴリ: $selectedCategory');
-    print('読み込んだ全イベント数: ${allEvents.length}');
-
     final filteredEvents = allEvents.where((event) {
       return event.category == selectedCategory;
     }).toList();
-
-    print('絞り込み後のイベント数: ${filteredEvents.length}');
 
     // --- ここが「データを渡す」ための変換処理 ---
     final eventsForCalendar = <DateTime, List<OtayoriEvent>>{};
