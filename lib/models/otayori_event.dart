@@ -37,6 +37,21 @@ class OtayoriEvent {
     );
   }
 
+  OtayoriEvent copyWith({
+    String? title,
+    String? category,
+    String? childId,
+    DateTime? date,
+  }) {
+    return OtayoriEvent(
+      id: this.id, // IDは変更しないので、元のIDをそのまま使う
+      title: title ?? this.title,
+      category: category ?? this.category,
+      childId: childId ?? this.childId,
+      date: date ?? this.date,
+    );
+  }
+
   // オブジェクトをJSON文字列に変換
   String toJson() => jsonEncode(toMap());
 

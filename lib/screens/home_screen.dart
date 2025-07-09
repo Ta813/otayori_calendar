@@ -243,29 +243,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     // 各イベント名
                     ...events.map((event) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // イベント名
-                          Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.only(top: 4.0, left: 4.0),
-                              child: Text('・${event.title}'),
-                            ),
+                      return InkWell(
+                        onTap: () {
+                          // 編集ダイアログを開く
+                          _showEditEventDialog(event);
+                        },
+                        // 角丸に合わせて、タップエフェクトも角丸にする
+                        borderRadius: BorderRadius.circular(4.0),
+                        child: Padding(
+                          // タップ範囲を少し広げるためのPadding
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 4.0, horizontal: 2.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // イベント名
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 4.0),
+                                  child: Text('・${event.title}'),
+                                ),
+                              ),
+
+                              // 削除ボタン
+                              IconButton(
+                                icon: const Icon(Icons.close,
+                                    size: 18, color: Colors.grey),
+                                onPressed: () {
+                                  _showDeleteConfirmDialog(event.id);
+                                },
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            ],
                           ),
-                          // 削除ボタン
-                          IconButton(
-                            icon: const Icon(Icons.close,
-                                size: 18, color: Colors.grey),
-                            onPressed: () {
-                              // 削除確認ダイアログを表示
-                              _showDeleteConfirmDialog(event.id);
-                            },
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(), // アイコンの余白を最小化
-                          ),
-                        ],
+                        ),
                       );
                     }),
                   ],
@@ -365,6 +377,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               },
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _showEditEventDialog(OtayoriEvent event) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        // 登録されている子供のリストを取得
+        final children = ref.read(childProvider);
+        return AddEventDialog(
+          selectedDate: event.date,
+          children: children,
+          // ★編集対象のイベントを渡す
+          eventToEdit: event,
         );
       },
     );

@@ -27,6 +27,17 @@ class Child {
     );
   }
 
+  Child copyWith({
+    String? name,
+    Color? color,
+  }) {
+    return Child(
+      id: this.id,
+      name: name ?? this.name,
+      color: color ?? this.color,
+    );
+  }
+
   String toJson() => json.encode(toMap());
 
   factory Child.fromJson(String source) => Child.fromMap(json.decode(source));

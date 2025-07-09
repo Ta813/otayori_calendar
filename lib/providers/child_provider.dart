@@ -45,6 +45,18 @@ class ChildNotifier extends StateNotifier<List<Child>> {
     state = state.where((child) => child.id != childId).toList();
     await _saveChildren(); // 変更を保存
   }
+
+  Future<void> updateChild({
+    required String id,
+    required String name,
+    required Color color,
+  }) async {
+    state = [
+      for (final child in state)
+        if (child.id == id) child.copyWith(name: name, color: color) else child,
+    ];
+    await _saveChildren();
+  }
 }
 
 final childProvider = StateNotifierProvider<ChildNotifier, List<Child>>((ref) {

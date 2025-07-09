@@ -5,7 +5,12 @@ import '../providers/child_provider.dart';
 import '../models/child.dart';
 
 class AddChildScreen extends ConsumerStatefulWidget {
-  const AddChildScreen({Key? key}) : super(key: key);
+  final Child? childToEdit;
+
+  const AddChildScreen({
+    Key? key,
+    this.childToEdit,
+  }) : super(key: key);
 
   @override
   ConsumerState<AddChildScreen> createState() => _AddChildScreenState();
@@ -14,6 +19,20 @@ class AddChildScreen extends ConsumerStatefulWidget {
 class _AddChildScreenState extends ConsumerState<AddChildScreen> {
   final _nameController = TextEditingController();
   Color _selectedColor = Colors.blue;
+
+  bool get _isEditMode => widget.childToEdit != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // 編集モードの場合、フォームに初期値を設定
+    if (_isEditMode) {
+      final child = widget.childToEdit!;
+      _nameController.text = child.name;
+      _selectedColor = child.color;
+    }
+  }
 
   // ... (dispose, _showColorPickerDialog, _saveChildメソッドは変更なし) ...
   void _showColorPickerDialog() {
@@ -51,10 +70,20 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
       );
       return;
     }
-    ref.read(childProvider.notifier).addChild(
-          name: _nameController.text,
-          color: _selectedColor,
-        );
+    if (_isEditMode) {
+      // 更新処理を呼び出す
+      ref.read(childProvider.notifier).updateChild(
+            id: widget.childToEdit!.id,
+            name: _nameController.text,
+            color: _selectedColor,
+          );
+    } else {
+      // 新規追加処理
+      ref.read(childProvider.notifier).addChild(
+            name: _nameController.text,
+            color: _selectedColor,
+          );
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('こどもが登録されました')),
     );
@@ -99,7 +128,7 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('こどもの追加・一覧'), // タイトルを少し変更
+        title: Text(_isEditMode ? 'こどもの編集' : 'こどもの追加'), // タイトルを少し変更
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -159,11 +188,23 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
                           ? Colors.black
                           : Colors.white;
 
-                      return Chip(
+                      return InputChip(
                         label: Text(child.name),
                         backgroundColor: child.color,
                         labelStyle: TextStyle(color: textColor),
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        onPressed: _isEditMode
+                            ? null
+                            : () {
+                                // 新規追加モードの時だけ編集画面に遷移
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => AddChildScreen(
+                                      childToEdit: child,
+                                    ),
+                                  ),
+                                );
+                              },
                         // 削除アイコンの色を設定
                         deleteIconColor: textColor.withOpacity(0.7),
                         // onDeletedコールバックで確認ダイアログを呼び出す

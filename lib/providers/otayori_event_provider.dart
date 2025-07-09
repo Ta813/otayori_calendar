@@ -59,6 +59,31 @@ class OtayoriEventNotifier extends StateNotifier<List<OtayoriEvent>> {
     // 変更を永続化する
     await _saveEvents();
   }
+
+  Future<void> updateEvent({
+    required String id,
+    required String title,
+    required String category,
+    required String childId,
+    required DateTime date,
+  }) async {
+    state = [
+      for (final event in state)
+        // IDが一致するイベントの場合は、新しい情報で作り直し、
+        // それ以外は元のイベントをそのまま使う
+        if (event.id == id)
+          event.copyWith(
+            title: title,
+            category: category,
+            childId: childId,
+            date: date,
+          )
+        else
+          event,
+    ];
+    // 変更を永続化する
+    await _saveEvents();
+  }
 }
 
 // このProviderを介してUIがNotifierにアクセスする

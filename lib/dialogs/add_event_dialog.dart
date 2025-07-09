@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart'; // 日付フォーマットのためにインポート
 
 import '../models/child.dart';
+import '../models/otayori_event.dart';
 import '../providers/otayori_event_provider.dart';
 import '../constants/default_items.dart';
 
@@ -14,11 +15,13 @@ enum RegistrationMode { single, range }
 class AddEventDialog extends ConsumerStatefulWidget {
   final DateTime selectedDate;
   final List<Child> children;
+  final OtayoriEvent? eventToEdit;
 
   const AddEventDialog({
     Key? key,
     required this.selectedDate,
     required this.children,
+    this.eventToEdit,
   }) : super(key: key);
 
   @override
@@ -41,15 +44,29 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
   // 曜日のラベル
   final List<String> _weekdayLabels = ['月', '火', '水', '木', '金', '土', '日'];
 
+  bool get _isEditMode => widget.eventToEdit != null;
+
   @override
   void initState() {
     super.initState();
-    if (widget.children.isNotEmpty) {
-      _selectedChildId = widget.children.first.id;
+
+    if (_isEditMode) {
+      final event = widget.eventToEdit!;
+      _titleController.text = event.title;
+      _selectedChildId = event.childId;
+      _category = event.category;
+      // 期間や曜日の情報も同様に設定するロジックをここに追加
+      // _mode = ...;
+      // _startDate = ...;
+      // _endDate = ...;
+    } else {
+      // 新規追加の場合の初期値設定
+      if (widget.children.isNotEmpty) {
+        _selectedChildId = widget.children.first.id;
+      }
+      _startDate = widget.selectedDate;
+      _endDate = widget.selectedDate;
     }
-    // 日付の初期値を設定
-    _startDate = widget.selectedDate;
-    _endDate = widget.selectedDate;
   }
 
   @override
@@ -96,26 +113,38 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
 
     final childId = _selectedChildId!;
 
-    if (_mode == RegistrationMode.single) {
-      ref.read(otayoriEventProvider.notifier).addEvent(
-            // 整形後のタイトルを渡す
-            title,
-            _category,
-            widget.selectedDate,
-            childId,
+    if (_isEditMode) {
+      // 更新処理を呼び出す
+      ref.read(otayoriEventProvider.notifier).updateEvent(
+            // OtayoriEventオブジェクトを渡す想定 (後でNotifierに作成)
+            id: widget.eventToEdit!.id,
+            title: _titleController.text,
+            category: _category,
+            childId: _selectedChildId!,
+            date: widget.eventToEdit!.date, // 日付は変更しない想定
           );
     } else {
-      for (var day = _startDate;
-          day.isBefore(_endDate.add(const Duration(days: 1)));
-          day = day.add(const Duration(days: 1))) {
-        if (_selectedWeekdays[day.weekday - 1]) {
-          ref.read(otayoriEventProvider.notifier).addEvent(
-                // 整形後のタイトルを渡す
-                title,
-                _category,
-                day,
-                childId,
-              );
+      if (_mode == RegistrationMode.single) {
+        ref.read(otayoriEventProvider.notifier).addEvent(
+              // 整形後のタイトルを渡す
+              title,
+              _category,
+              widget.selectedDate,
+              childId,
+            );
+      } else {
+        for (var day = _startDate;
+            day.isBefore(_endDate.add(const Duration(days: 1)));
+            day = day.add(const Duration(days: 1))) {
+          if (_selectedWeekdays[day.weekday - 1]) {
+            ref.read(otayoriEventProvider.notifier).addEvent(
+                  // 整形後のタイトルを渡す
+                  title,
+                  _category,
+                  day,
+                  childId,
+                );
+          }
         }
       }
     }
@@ -129,7 +158,7 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
 
     return AlertDialog(
       scrollable: true,
-      title: const Text('予定の追加'),
+      title: Text(_isEditMode ? '予定の編集' : '予定の追加'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -139,8 +168,12 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
             Autocomplete<String>(
               displayStringForOption: (String option) =>
                   option.split('(').first,
+
+              // 編集モードの場合、初期値を設定する
+              initialValue: TextEditingValue(
+                text: _isEditMode ? widget.eventToEdit!.title : '',
+              ),
               optionsBuilder: (TextEditingValue textEditingValue) {
-                // この部分は前回のデバッグコードのままでOKです
                 final inputText = textEditingValue.text;
 
                 if (inputText.isEmpty) {
@@ -242,21 +275,24 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
             ),
             const Divider(height: 32),
 
-            // ★★★ 登録モード切替 ★★★
-            SegmentedButton<RegistrationMode>(
-              segments: const [
-                ButtonSegment(
-                    value: RegistrationMode.single, label: Text('単日')),
-                ButtonSegment(value: RegistrationMode.range, label: Text('期間')),
-              ],
-              selected: {_mode},
-              onSelectionChanged: (newSelection) {
-                setState(() {
-                  _mode = newSelection.first;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
+            if (!_isEditMode) ...[
+              // ★★★ 登録モード切替 ★★★
+              SegmentedButton<RegistrationMode>(
+                segments: const [
+                  ButtonSegment(
+                      value: RegistrationMode.single, label: Text('単日')),
+                  ButtonSegment(
+                      value: RegistrationMode.range, label: Text('期間')),
+                ],
+                selected: {_mode},
+                onSelectionChanged: (newSelection) {
+                  setState(() {
+                    _mode = newSelection.first;
+                  });
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
 
             if (_mode == RegistrationMode.single)
               Text(

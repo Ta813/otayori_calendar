@@ -157,7 +157,7 @@ class CalendarWidget extends ConsumerWidget {
               // 青の背景を持つコンテナでラップする
               return Container(
                 decoration: BoxDecoration(
-                  color: Colors.blue,
+                  color: Colors.lightBlue[200],
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 // 背景が濃いので、文字は白にする
