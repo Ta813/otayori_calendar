@@ -12,6 +12,7 @@ import '../models/otayori_image.dart';
 import 'analysis_screen.dart';
 import '../providers/child_provider.dart';
 import '../models/child.dart';
+import '../constants/default_otayori_titles.dart';
 
 class OtayoriListScreen extends ConsumerStatefulWidget {
   const OtayoriListScreen({Key? key}) : super(key: key);
@@ -102,7 +103,21 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
 
     try {
       await imageFile.copy(savedImagePath);
-      ref.read(otayoriImageProvider.notifier).addImage(savedImagePath, childId);
+      // タイトル入力ダイアログを呼び出す
+      if (!context.mounted) return;
+      final title = await _promptForTitle(context);
+
+      // タイトルが入力された場合のみ保存処理に進む
+      if (title != null && title.isNotEmpty) {
+        ref
+            .read(otayoriImageProvider.notifier)
+            .addImage(savedImagePath, childId, title);
+      } else {
+        // タイトルが入力されなかった（キャンセルされた）場合、
+        // コピーしたファイルを削除しておく
+        await File(savedImagePath).delete();
+        print('タイトルが入力されなかったので保存をキャンセルしました。');
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(
@@ -191,71 +206,318 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
   // GridViewを生成する部分を共通のウィジェットメソッドとして分離
   Widget _buildImageGrid(List<OtayoriImage> images) {
     if (images.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return GridView.count(
+      shrinkWrap: true, // 親ウィジェット(ListView)に合わせて高さを調整
+      physics: const NeverScrollableScrollPhysics(), // このグリッド自体のスクロールを無効化
+      crossAxisCount: 3, // 1行に表示するアイテム数
+      padding: const EdgeInsets.all(8.0),
+      crossAxisSpacing: 8.0,
+      mainAxisSpacing: 8.0,
+      children: images.map(
+        (otayori) {
+          return Column(children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  // AI解析画面には、画像のパスを渡す
+                  // AnalysisScreenに画面遷移し、画像のパスを渡す
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AnalysisScreen(
+                        imagePath: otayori.imagePath,
+                        childId: otayori.childId,
+                      ),
+                    ),
+                  );
+                },
+                onLongPress: () {
+                  _showDeleteConfirmDialog(context, ref, otayori.id);
+                },
+                // Stackを使って画像の上に日付を重ねる
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // 背景画像
+                    Image.file(File(otayori.imagePath), fit: BoxFit.cover),
+                    // 日付を表示する部分
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 2,
+                          horizontal: 4,
+                        ),
+                        // 日付の背景を少し暗くする
+                        color: Colors.black.withOpacity(0.6),
+                        child: Text(
+                          // intlパッケージを使って日付をフォーマット
+                          DateFormat(
+                            'yyyy/MM/dd',
+                          ).format(otayori.savedDate),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            // タイトルを表示するTextウィジェット
+            GestureDetector(
+              onTap: () {
+                // 上で作成した編集ダイアログを呼び出す
+                _showEditTitleDialog(otayori);
+              },
+              child: Container(
+                // タップ範囲を広げるための工夫
+                width: double.infinity, // 横幅いっぱい
+                color: Colors.transparent, // 透明でも当たり判定はつく
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Text(
+                  otayori.title.isNotEmpty
+                      ? otayori.title
+                      : 'タイトルなし', // タイトルが空の場合の表示
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ]);
+        },
+      ).toList(),
+    );
+  }
+
+  Widget _buildGroupedList(List<OtayoriImage> images) {
+    if (images.isEmpty) {
       return const Center(child: Text('このカテゴリのおたよりはありません。'));
     }
-    return GridView.builder(
-      padding: const EdgeInsets.all(8.0),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8.0,
-        mainAxisSpacing: 8.0,
-      ),
-      itemCount: images.length,
+
+    // 1. 日付の新しい順にソート
+    images.sort((a, b) => b.savedDate.compareTo(a.savedDate));
+
+    // 2. 月ごとにグループ化
+    final groupedImages = <String, List<OtayoriImage>>{};
+    for (final image in images) {
+      final monthKey = DateFormat('yyyy年M月').format(image.savedDate);
+      if (groupedImages[monthKey] == null) {
+        groupedImages[monthKey] = [];
+      }
+      groupedImages[monthKey]!.add(image);
+    }
+
+    // 3. ListViewを構築
+    return ListView.builder(
+      // 月ヘッダー + グリッド で1セットなので、月の数だけリストアイテムがある
+      itemCount: groupedImages.length,
       itemBuilder: (context, index) {
-        final otayori = images[index];
-        return GestureDetector(
-          onTap: () {
-            // AI解析画面には、画像のパスを渡す
-            // AnalysisScreenに画面遷移し、画像のパスを渡す
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AnalysisScreen(
-                  imagePath: otayori.imagePath,
-                  childId: otayori.childId,
-                ),
+        final month = groupedImages.keys.elementAt(index);
+        final monthlyImages = groupedImages[month]!;
+
+        // 月ヘッダーと画像グリッドをColumnでまとめる
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 月ヘッダー
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+              child: Text(
+                month,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            );
-          },
-          onLongPress: () {
-            _showDeleteConfirmDialog(context, ref, otayori.id);
-          },
-          // Stackを使って画像の上に日付を重ねる
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // 背景画像
-              Image.file(File(otayori.imagePath), fit: BoxFit.cover),
-              // 日付を表示する部分
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 2,
-                    horizontal: 4,
-                  ),
-                  // 日付の背景を少し暗くする
-                  color: Colors.black.withOpacity(0.6),
-                  child: Text(
-                    // intlパッケージを使って日付をフォーマット
-                    DateFormat(
-                      'yyyy/MM/dd',
-                    ).format(otayori.savedDate),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+            // その月のおたよりグリッド
+            _buildImageGrid(monthlyImages),
+          ],
         );
       },
     );
+  }
+
+  Future<String?> _promptForTitle(BuildContext context) async {
+    final titleController = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('おたよりのタイトルを入力'),
+          content: Autocomplete<String>(
+            // 候補が選択された後、TextFieldに表示する文字列を整形する
+            displayStringForOption: (String option) => option.split('(').first,
+            optionsBuilder: (TextEditingValue textEditingValue) {
+              if (textEditingValue.text.isEmpty) {
+                return const Iterable<String>.empty();
+              }
+              // 1. 過去の履歴のタイトルを取得（読み仮名なし）
+              final historyTitles = ref
+                  .read(otayoriImageProvider)
+                  .map((o) => o.title)
+                  .where((t) => t.isNotEmpty);
+
+              // 2. デフォルトのタイトルから、読み仮名を除いたリストを作成
+              final defaultTitlesWithoutKana =
+                  defaultOtayoriTitles.map((t) => t.split('(').first);
+
+              // 3. ２つのリストを結合し、重複を除外した「表示すべきタイトルのリスト」を作成
+              final uniqueTitles =
+                  {...historyTitles, ...defaultTitlesWithoutKana}.toList();
+
+              // 4. デフォルトの「読み仮名付き」リストから、表示すべきタイトルに合致するものだけを検索対象とする
+              final searchTargetList = defaultOtayoriTitles
+                  .where((t) => uniqueTitles.contains(t.split('(').first))
+                  .toList();
+
+              // 5. 検索対象リストから、ユーザーの入力に一致するものを返す
+              return searchTargetList.where((String option) {
+                // optionは 'クラスだより(くらすだより)' のような形式
+                return option
+                    .toLowerCase()
+                    .contains(textEditingValue.text.toLowerCase());
+              });
+            },
+            onSelected: (String selection) {
+              final title = selection.split('(').first;
+              titleController.text = title;
+            },
+            fieldViewBuilder: (context, fieldTextEditingController, focusNode,
+                onEditingComplete) {
+              // コントローラを同期
+              fieldTextEditingController.addListener(() {
+                titleController.text = fieldTextEditingController.text;
+              });
+
+              return TextField(
+                controller: fieldTextEditingController,
+                focusNode: focusNode,
+                autofocus: true,
+                decoration: const InputDecoration(hintText: '例：7月号クラスだより'),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(), // キャンセル
+              child: const Text('キャンセル'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // 入力されたテキストを返してダイアログを閉じる
+                Navigator.of(context).pop(titleController.text);
+              },
+              child: const Text('決定'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// タイトル編集ダイアログを表示する
+  Future<void> _showEditTitleDialog(OtayoriImage otayori) async {
+    // テキストフィールドの初期値を現在のタイトルに設定
+    final titleController = TextEditingController(text: otayori.title);
+
+    final newTitle = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('タイトルの編集'),
+        content: Autocomplete<String>(
+          // 候補が選択された後、TextFieldに表示する文字列を整形する
+          displayStringForOption: (String option) => option.split('(').first,
+          // 候補リストを生成するロジック
+          optionsBuilder: (TextEditingValue textEditingValue) {
+            if (textEditingValue.text.isEmpty) {
+              return const Iterable<String>.empty();
+            }
+            // 1. 過去の履歴のタイトルを取得（読み仮名なし）
+            final historyTitles = ref
+                .read(otayoriImageProvider)
+                .map((o) => o.title)
+                .where((t) => t.isNotEmpty);
+
+            // 2. デフォルトのタイトルから、読み仮名を除いたリストを作成
+            final defaultTitlesWithoutKana =
+                defaultOtayoriTitles.map((t) => t.split('(').first);
+
+            // 3. ２つのリストを結合し、重複を除外した「表示すべきタイトルのリスト」を作成
+            final uniqueTitles =
+                {...historyTitles, ...defaultTitlesWithoutKana}.toList();
+
+            // 4. デフォルトの「読み仮名付き」リストから、表示すべきタイトルに合致するものだけを検索対象とする
+            final searchTargetList = defaultOtayoriTitles
+                .where((t) => uniqueTitles.contains(t.split('(').first))
+                .toList();
+
+            // 5. 検索対象リストから、ユーザーの入力に一致するものを返す
+            return searchTargetList.where((String option) {
+              // optionは 'クラスだより(くらすだより)' のような形式
+              return option
+                  .toLowerCase()
+                  .contains(textEditingValue.text.toLowerCase());
+            });
+          },
+          // 候補が選択されたら、我々のコントローラにも反映
+          onSelected: (String selection) {
+            final title = selection.split('(').first;
+            titleController.text = title;
+          },
+          // テキスト入力欄の見た目を定義
+          fieldViewBuilder: (context, fieldTextEditingController, focusNode,
+              onEditingComplete) {
+            // ★★★ 4. コントローラを同期させる ★★★
+            // Autocomplete内部のコントローラと、我々が管理するコントローラを同期させる
+
+            // 初期値を設定
+            fieldTextEditingController.text = titleController.text;
+            // テキストが変更されるたびに同期
+            fieldTextEditingController.addListener(() {
+              titleController.text = fieldTextEditingController.text;
+            });
+
+            return TextField(
+              controller: fieldTextEditingController, // Autocompleteのコントローラを使用
+              focusNode: focusNode,
+              autofocus: true,
+              decoration: const InputDecoration(labelText: '新しいタイトル'),
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('キャンセル'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop(titleController.text);
+            },
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+
+    // 新しいタイトルが入力されていれば、更新処理を呼び出す
+    if (newTitle != null && newTitle.isNotEmpty) {
+      ref
+          .read(otayoriImageProvider.notifier)
+          .updateOtayoriTitle(otayori.id, newTitle);
+    }
   }
 
   @override
@@ -282,14 +544,14 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
         controller: _tabController,
         children: [
           // 「全員」タブの中身
-          _buildImageGrid(otayoriImages),
+          _buildGroupedList(otayoriImages),
           // 各こどものタブの中身
           ...children.map((child) {
             // こどものIDでフィルタリング
             final filteredImages = otayoriImages
                 .where((otayori) => otayori.childId == child.id)
                 .toList();
-            return _buildImageGrid(filteredImages);
+            return _buildGroupedList(filteredImages);
           }),
         ],
       ),

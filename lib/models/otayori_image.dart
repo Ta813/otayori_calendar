@@ -5,12 +5,14 @@ class OtayoriImage {
   final String imagePath; // 画像ファイルの保存パス
   final DateTime savedDate; // 保存された日時
   final String childId; // こどもID
+  final String title;
 
   OtayoriImage({
     required this.id,
     required this.imagePath,
     required this.savedDate,
     required this.childId,
+    required this.title,
   });
 
   // OtayoriImageオブジェクト → Map に変換するメソッド
@@ -20,6 +22,7 @@ class OtayoriImage {
       'imagePath': imagePath,
       'savedDate': savedDate.toIso8601String(), // DateTimeは文字列として保存
       'childId': childId,
+      'title': title,
     };
   }
 
@@ -30,6 +33,23 @@ class OtayoriImage {
       imagePath: map['imagePath'] ?? '',
       savedDate: DateTime.parse(map['savedDate'] ?? ''), // 文字列をDateTimeに戻す
       childId: map['childId'] ?? '',
+      title: map['title'] ?? '',
+    );
+  }
+
+  OtayoriImage copyWith({
+    String? id,
+    String? imagePath,
+    DateTime? savedDate,
+    String? childId,
+    String? title,
+  }) {
+    return OtayoriImage(
+      id: id ?? this.id,
+      imagePath: imagePath ?? this.imagePath,
+      savedDate: savedDate ?? this.savedDate,
+      childId: childId ?? this.childId,
+      title: title ?? this.title,
     );
   }
 

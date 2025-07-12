@@ -32,13 +32,14 @@ class OtayoriImageNotifier extends StateNotifier<List<OtayoriImage>> {
   }
 
   // addImageメソッドを修正
-  void addImage(String path, String childId) async {
+  void addImage(String path, String childId, String title) async {
     // 新しいOtayoriImageオブジェクトを作成
     final newImage = OtayoriImage(
       id: _uuid.v4(), // v4メソッドでユニークなIDを生成
       imagePath: path,
       savedDate: DateTime.now(), // 現在日時を保存日として設定
       childId: childId,
+      title: title,
     );
 
     // 同じパスの画像が既になければリストに追加
@@ -52,7 +53,11 @@ class OtayoriImageNotifier extends StateNotifier<List<OtayoriImage>> {
     // 1. 削除対象のOtayoriImageオブジェクトを探す
     final imageToRemove = state.firstWhere((image) => image.id == id,
         orElse: () => OtayoriImage(
-            id: '', imagePath: '', savedDate: DateTime.now(), childId: ''));
+            id: '',
+            imagePath: '',
+            savedDate: DateTime.now(),
+            childId: '',
+            title: ''));
 
     // 見つからなければ何もしない
     if (imageToRemove.id.isEmpty) return;
@@ -71,6 +76,20 @@ class OtayoriImageNotifier extends StateNotifier<List<OtayoriImage>> {
       print('ファイルの削除に失敗しました: $e');
       // ここでエラーをユーザーに通知することも可能
     }
+  }
+
+  Future<void> updateOtayoriTitle(String id, String newTitle) async {
+    state = [
+      for (final image in state)
+        if (image.id == id)
+          // IDが一致するおたよりだけ、タイトルを更新したコピーに差し替える
+          image.copyWith(title: newTitle)
+        else
+          // それ以外は元のまま
+          image,
+    ];
+    // 変更を永続化する
+    await _saveImages();
   }
 }
 

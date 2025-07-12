@@ -45,7 +45,7 @@ class AnalysisScreen extends ConsumerStatefulWidget {
 class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   File? _imageFile;
   bool _isProcessing = false; // 処理中フラグを追加
-  List<SelectableEventItem> _scheduleItems = [];
+  List<SelectableEventItem>? _scheduleItems;
 
   final Set<String> _selectedEventIds = {};
 
@@ -65,7 +65,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
 
     setState(() {
       _isProcessing = true;
-      _scheduleItems = []; // 解析前に前の結果をクリア
+      _scheduleItems = null; // 解析前に前の結果をクリア
     });
 
     try {
@@ -104,14 +104,28 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       ]);
 
       // 5. 結果（JSON文字列）を解析し、変数に格納
-      final String jsonString = response.text ?? '[]'; // 結果がnullなら空の配列にする
-      final List<dynamic> parsedJson = jsonDecode(jsonString);
-      final uuid = Uuid();
+      final String jsonString = response.text ?? '[]';
+      final dynamic decodedData = jsonDecode(jsonString); // まずdynamic型で受け取る
 
+      final List<dynamic> parsedList; // ループ処理で使う最終的なリスト
+
+      // AIの応答がListかMapかで処理を分岐
+      if (decodedData is List) {
+        // 応答が期待通りリスト形式だった場合
+        parsedList = decodedData;
+      } else if (decodedData is Map) {
+        // 応答がオブジェクト形式だった場合、それをリストでラップする
+        parsedList = [decodedData];
+      } else {
+        // それ以外（空の応答など）の場合は空のリストとして扱う
+        parsedList = [];
+      }
+
+      final uuid = Uuid();
       final List<SelectableEventItem> newScheduleItems = [];
 
       // 日付ごとのデータ（Map）でループ
-      for (var dailyData in parsedJson) {
+      for (var dailyData in parsedList) {
         final mapData = dailyData as Map<String, dynamic>;
         final dateString = mapData['date'] as String? ?? '';
         DateTime? date = DateTime.tryParse(dateString);
@@ -164,21 +178,40 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   }
 
   Widget _buildResultsList() {
-    if (_scheduleItems.isEmpty) {
-      // 解析結果がなければ、メッセージを表示
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Text("行事、準備物は抽出されていません。"), // 初期メッセージやエラーメッセージはここで表示
+    // 1. 初期状態（まだ解析していない）の場合 ★★★
+    if (_scheduleItems == null) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          // 初期状態では何も表示しないか、操作を促すメッセージを表示
+          child: Text(
+            '上のボタンを押して解析を開始してください。',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    // 解析したが結果が空だった場合 ★★★
+    if (_scheduleItems!.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            "行事・準備物は抽出できませんでした。",
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
       );
     }
 
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _scheduleItems.length,
+      itemCount: _scheduleItems!.length,
       itemBuilder: (context, index) {
         // List<SelectableEventItem> からデータを取り出す
-        final item = _scheduleItems[index];
+        final item = _scheduleItems![index];
         final bool isSelected = _selectedEventIds.contains(item.id);
 
         // 表示用の文字列を組み立てる
@@ -213,7 +246,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       //    見つからなければ何もしない
       try {
         final itemToSave =
-            _scheduleItems.firstWhere((item) => item.id == selectedId);
+            _scheduleItems!.firstWhere((item) => item.id == selectedId);
 
         // 3. OtayoriEventの形式に合わせてProviderのaddEventを呼び出す
         ref.read(otayoriEventProvider.notifier).addEvent(
@@ -266,7 +299,13 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                 const SizedBox(height: 8),
                 // 渡された画像を表示
                 if (_imageFile != null)
-                  Image.file(_imageFile!, height: 300, fit: BoxFit.contain),
+                  InteractiveViewer(
+                    // ピンチイン・ピンチアウトで拡大縮小できるようになる
+                    maxScale: 4.0, // 最大4倍までズーム可能（お好みで調整）
+                    minScale: 1.0, // 最小スケール
+                    child: Image.file(_imageFile!,
+                        height: 550, fit: BoxFit.contain),
+                  ),
 
                 const SizedBox(height: 16),
 
