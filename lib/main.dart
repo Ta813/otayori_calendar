@@ -7,10 +7,19 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
 import 'providers/otayori_image_provider.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'firebase_options.dart';
 
 void main() async {
   // Flutterの初期化
   WidgetsFlutterBinding.ensureInitialized();
+  // Firebaseを初期化
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  // FlutterフレームワークのエラーをCrashlyticsに送信
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
   // Mobile Ads SDKを初期化
   await MobileAds.instance.initialize();
   // 日本語ロケールをデフォルトに設定（DateFormat で日本語表示をしたい場合）

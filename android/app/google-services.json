@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "889658592193",
+    "project_id": "otayori-calendar",
+    "storage_bucket": "otayori-calendar.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:889658592193:android:4ae168d896bfd50297bd40",
+        "android_client_info": {
+          "package_name": "com.kotoapp.otayori_calendar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASS_DzBNEPBdtfye93ObXIH9yv9NB8qVQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
