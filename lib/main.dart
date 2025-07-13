@@ -6,10 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
 import 'providers/otayori_image_provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 void main() async {
   // Flutterの初期化
   WidgetsFlutterBinding.ensureInitialized();
+  // Mobile Ads SDKを初期化
+  await MobileAds.instance.initialize();
   // 日本語ロケールをデフォルトに設定（DateFormat で日本語表示をしたい場合）
   Intl.defaultLocale = 'ja_JP';
 

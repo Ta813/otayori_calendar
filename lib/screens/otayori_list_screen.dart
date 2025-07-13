@@ -13,6 +13,7 @@ import 'analysis_screen.dart';
 import '../providers/child_provider.dart';
 import '../models/child.dart';
 import '../constants/default_otayori_titles.dart';
+import '../widgets/banner_ad_widget.dart';
 
 class OtayoriListScreen extends ConsumerStatefulWidget {
   const OtayoriListScreen({Key? key}) : super(key: key);
@@ -540,25 +541,38 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
           isScrollable: true, // タブが多くなってもスクロールできるように
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
-          // 「全員」タブの中身
-          _buildGroupedList(otayoriImages),
-          // 各こどものタブの中身
-          ...children.map((child) {
-            // こどものIDでフィルタリング
-            final filteredImages = otayoriImages
-                .where((otayori) => otayori.childId == child.id)
-                .toList();
-            return _buildGroupedList(filteredImages);
-          }),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // 「全員」タブの中身
+                _buildGroupedList(otayoriImages),
+                // 各こどものタブの中身
+                ...children.map((child) {
+                  // こどものIDでフィルタリング
+                  final filteredImages = otayoriImages
+                      .where((otayori) => otayori.childId == child.id)
+                      .toList();
+                  return _buildGroupedList(filteredImages);
+                }),
+              ],
+            ),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showImageSourceActionSheet(context, ref),
         tooltip: '新しいおたよりを追加', // 修正済みのメソッドを呼ぶ
         child: const Icon(Icons.add),
+      ),
+      bottomNavigationBar: const SafeArea(
+        child: SizedBox(
+          width: double.infinity,
+          height: 50, // AdSize.bannerの高さに合わせる
+          child: BannerAdWidget(),
+        ),
       ),
     );
   }

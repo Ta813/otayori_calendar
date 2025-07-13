@@ -6,6 +6,10 @@
         android:label="otayori_calendar"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-2333753292729105~4958838664"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

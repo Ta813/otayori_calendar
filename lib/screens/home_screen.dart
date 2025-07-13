@@ -10,6 +10,7 @@ import 'add_child_screen.dart';
 import 'otayori_list_screen.dart';
 import '../dialogs/add_event_dialog.dart';
 import '../providers/child_provider.dart'; // こども情報のProviderをインポート
+import '../widgets/banner_ad_widget.dart';
 
 enum CalendarDisplayMode { event, preparation }
 
@@ -170,6 +171,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
         tooltip: 'おたより一覧を見る',
         child: const Icon(Icons.list_alt_rounded),
+      ),
+      bottomNavigationBar: const SafeArea(
+        child: SizedBox(
+          width: double.infinity,
+          height: 50, // AdSize.bannerの高さに合わせる
+          child: BannerAdWidget(),
+        ),
       ),
     );
   }

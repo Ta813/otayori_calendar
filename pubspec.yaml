@@ -25,6 +25,7 @@ dependencies:
   cunning_document_scanner: ^1.1.2
   uuid: ^4.4.0
   flutter_colorpicker: ^1.0.3
+  google_mobile_ads: ^5.1.0
 
 dev_dependencies:
   flutter_test:

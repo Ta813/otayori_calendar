@@ -5,9 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'dart:typed_data';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/otayori_event_provider.dart';
+import '../helpers/admob_helper.dart';
+import '../widgets/banner_ad_widget.dart';
 
 // 予定の種類を定義（行事 or 準備物）
 enum EventItemType { event, item }
@@ -51,17 +55,27 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
 
   static final String aPIKey = dotenv.env['GOOGLE_API_KEY']!;
 
+  RewardedAd? _rewardedAd;
+  int _analysisCount = 0;
+  static const String _analysisCountKey = 'analysis_count'; // 保存キー
+
+  bool _isWaitingForAd = false;
+
   // initStateで渡された画像パスをセット
   @override
   void initState() {
     super.initState();
     // 画面が作られた瞬間に、渡された画像パスを_imageFileにセットする
     _imageFile = File(widget.imagePath);
+    _loadCountAndAd();
   }
 
   Future<void> _analyzeImageWithAI() async {
     // 画像ファイルがなければ処理を中断
     if (_imageFile == null) return;
+
+    // 解析回数をここでインクリメント
+    await _incrementAndSaveCount();
 
     setState(() {
       _isProcessing = true;
@@ -280,6 +294,175 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     }
   }
 
+  /// 解析回数を読み込み、リワード広告を読み込むメソッド
+  Future<void> _loadCountAndAd() async {
+    final prefs = await SharedPreferences.getInstance();
+    // mountedプロパティを使って、ウィジェットがまだ画面に存在するか確認
+    if (!mounted) return;
+
+    setState(() {
+      _analysisCount = prefs.getInt(_analysisCountKey) ?? 0;
+    });
+    // 画面表示後、少しだけ待ってから最初の広告を読み込む
+    await Future.delayed(const Duration(milliseconds: 500)); // 0.5秒待つ
+
+    // 待っている間に画面が閉じられた可能性も考慮して、再度mountedをチェック
+    if (mounted) {
+      _loadRewardedAd(); // 広告を読み込む
+    }
+  }
+
+  /// 解析回数を+1して保存するメソッド
+  Future<void> _incrementAndSaveCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _analysisCount++;
+    });
+    await prefs.setInt(_analysisCountKey, _analysisCount);
+  }
+
+  /// リワード広告を読み込むメソッド
+  void _loadRewardedAd() {
+    AdMobHelper.loadRewardedAd(
+      onAdLoaded: (ad) {
+        print('リワード広告が読み込まれました。');
+        // 広告のライフサイクルイベントを監視
+        ad.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (ad) {
+            ad.dispose(); // 広告が閉じられたら破棄
+            _loadRewardedAd(); // 次の広告を読み込んでおく
+          },
+          onAdFailedToShowFullScreenContent: (ad, error) {
+            print('広告の表示に失敗しました: $error');
+            ad.dispose();
+            _loadRewardedAd();
+          },
+        );
+        setState(() {
+          _rewardedAd = ad;
+        });
+      },
+      onAdFailedToLoad: (error) {
+        print('リワード広告の読み込みに失敗しました: $error');
+        setState(() {
+          _rewardedAd = null;
+        });
+      },
+    );
+  }
+
+  void _handleAnalysisButtonPressed() async {
+    if ((_analysisCount + 1) % 5 == 0) {
+      final bool? wantsToWatchAd = await _showWatchAdDialog();
+
+      // ユーザーが「広告を見る」を選択した場合のみ、次の処理に進む
+      if (wantsToWatchAd == true) {
+        // 広告が準備OKかチェック
+        if (_rewardedAd != null) {
+          _showRewardedAd();
+        } else {
+          // 広告が準備できていなければ、待機＆リトライ処理を開始
+          _waitForAdAndShow();
+        }
+      }
+    } else {
+      _analyzeImageWithAI();
+    }
+  }
+
+  /// 広告が読み込まれるのを待機し、表示するメソッド
+  Future<void> _waitForAdAndShow() async {
+    // タイムアウトを15秒に設定
+    const timeout = Duration(seconds: 15);
+    final stopwatch = Stopwatch()..start();
+
+    // タイムアウトするか、広告が読み込まれるまでループ
+    while (stopwatch.elapsed < timeout) {
+      // 広告が読み込まれたかチェック
+      if (_rewardedAd != null) {
+        setState(() {
+          _isWaitingForAd = false; // 待機モードを終了
+        });
+        _showRewardedAd(); // 広告を表示
+        return; // 処理を正常終了
+      }
+      // 1秒待ってからリトライ
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    // --- タイムアウトした場合の処理 ---
+    stopwatch.stop();
+    setState(() {
+      _isWaitingForAd = false; // 待機モードを終了
+    });
+
+    // ユーザーにタイムアウトしたことを伝えるダイアログを表示
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('エラー'),
+          content: const Text('広告の読み込みに失敗しました。\nネットワーク接続などを確認して、もう一度お試しください。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  /// 広告を視聴するかどうかをユーザーに尋ねるダイアログ
+  Future<bool?> _showWatchAdDialog() {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false, // ダイアログ外をタップしても閉じない
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('広告を見て解析を続ける'),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('AIによる解析を続けるには、短い動画広告をご覧いただく必要があります。'),
+                SizedBox(height: 8),
+                Text('広告を視聴しますか？'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // 「キャンセル」が押されたことを示すためにfalseを返す
+                Navigator.of(context).pop(false);
+              },
+              child: const Text('キャンセル'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // 「広告を見る」が押されたことを示すためにtrueを返す
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('広告を見る'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// リワード広告を表示するメソッド
+  void _showRewardedAd() {
+    _rewardedAd!.show(
+      onUserEarnedReward: (ad, reward) {
+        print('リワードを獲得しました！ item: ${reward.type}, amount: ${reward.amount}');
+        // ★★★ ユーザーが広告を最後まで見たら、解析を実行 ★★★
+        _analyzeImageWithAI();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // ScaffoldをStackでラップ
@@ -288,61 +471,79 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         // これまでのUIをScaffoldで構築
         Scaffold(
           appBar: AppBar(title: const Text('AIで解析・登録')),
-          body: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: ListView(
-              children: [
-                Text(
-                  '対象のおたより',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                // 渡された画像を表示
-                if (_imageFile != null)
-                  InteractiveViewer(
-                    // ピンチイン・ピンチアウトで拡大縮小できるようになる
-                    maxScale: 4.0, // 最大4倍までズーム可能（お好みで調整）
-                    minScale: 1.0, // 最小スケール
-                    child: Image.file(_imageFile!,
-                        height: 550, fit: BoxFit.contain),
+          body: Column(
+            // ★ body全体をColumnで囲む
+            children: [
+              Expanded(
+                // ★ これまでのbody部分をExpandedで囲む
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: ListView(
+                    children: [
+                      Text(
+                        '対象のおたより',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      // 渡された画像を表示
+                      if (_imageFile != null)
+                        InteractiveViewer(
+                          // ピンチイン・ピンチアウトで拡大縮小できるようになる
+                          maxScale: 4.0, // 最大4倍までズーム可能（お好みで調整）
+                          minScale: 1.0, // 最小スケール
+                          child: Image.file(_imageFile!,
+                              height: 550, fit: BoxFit.contain),
+                        ),
+
+                      const SizedBox(height: 16),
+
+                      // --- AI解析実行ボタン ---
+                      ElevatedButton.icon(
+                        onPressed:
+                            _isProcessing ? null : _handleAnalysisButtonPressed,
+                        icon: const Icon(Icons.auto_awesome),
+                        label: const Text('このおたよりをAIで解析する'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+                      // --- 解析結果の表示 ---
+                      _buildResultsList(),
+
+                      const SizedBox(height: 24),
+
+                      ElevatedButton.icon(
+                        // _selectedEventIdsが空の場合はボタンを無効化(null)、そうでなければ保存処理を呼ぶ
+                        onPressed: _selectedEventIds.isEmpty || _isProcessing
+                            ? null
+                            : () {
+                                _saveSelectedItems(); // ★保存メソッド
+                              },
+                        icon: const Icon(Icons.calendar_today),
+                        label:
+                            Text('選択した${_selectedEventIds.length}件をカレンダーに登録'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green, // 色を緑に
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          textStyle: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                   ),
-
-                const SizedBox(height: 16),
-
-                // --- AI解析実行ボタン ---
-                ElevatedButton.icon(
-                  onPressed: _isProcessing ? null : _analyzeImageWithAI,
-                  icon: const Icon(Icons.auto_awesome),
-                  label: const Text('このおたよりをAIで解析する'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
                 ),
-
-                const SizedBox(height: 16),
-                // --- 解析結果の表示 ---
-                _buildResultsList(),
-
-                const SizedBox(height: 24),
-
-                ElevatedButton.icon(
-                  // _selectedEventIdsが空の場合はボタンを無効化(null)、そうでなければ保存処理を呼ぶ
-                  onPressed: _selectedEventIds.isEmpty || _isProcessing
-                      ? null
-                      : () {
-                          _saveSelectedItems(); // ★保存メソッド
-                        },
-                  icon: const Icon(Icons.calendar_today),
-                  label: Text('選択した${_selectedEventIds.length}件をカレンダーに登録'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green, // 色を緑に
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    textStyle: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
+              ),
+            ],
+          ),
+          bottomNavigationBar: const SafeArea(
+            child: SizedBox(
+              width: double.infinity,
+              height: 70, // AdSize.bannerの高さに合わせる
+              child: BannerAdWidget(),
             ),
           ),
         ),
@@ -363,6 +564,27 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                   SizedBox(height: 16),
                   Text(
                     '文字を認識中...',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+        // 広告待機中のローディング画面
+        if (_isWaitingForAd)
+          Container(
+            color: Colors.black.withOpacity(0.5),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    '広告を準備しています...',
                     style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ],
