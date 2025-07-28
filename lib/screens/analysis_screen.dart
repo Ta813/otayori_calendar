@@ -12,6 +12,7 @@ import 'package:uuid/uuid.dart';
 import '../providers/otayori_event_provider.dart';
 import '../helpers/admob_helper.dart';
 import '../widgets/banner_ad_widget.dart';
+import '../l10n/app_localizations.dart';
 
 // 予定の種類を定義（行事 or 準備物）
 enum EventItemType { event, item }
@@ -93,13 +94,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         ),
       );
 
-      // 2. 画像ファイルをバイトデータとして読み込む
+      // 画像ファイルをバイトデータとして読み込む
       final Uint8List imageBytes = await _imageFile!.readAsBytes();
 
-      // 3. プロンプト（AIへの指示）を修正
-      final prompt = TextPart("""
-      この画像は学校からのおたよりです。
-      画像から日付ごとの「行事」と「持っていくもの」を抽出し、以下のJSON形式の配列で出力してください。
+      // 翻訳する必要のない「ルール部分」をDartコード内で定義
+      const String jsonFormatRules = """
 
       【出力形式のルール】
       ・全体を [] の配列にしてください。
@@ -109,15 +108,22 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       ・持っていくもののキーは "items_to_bring" とし、値は文字列の配列にしてください。
       ・もし特定の日付に行事や持っていくものがなければ、空の配列 [] を入れてください。
       ・画像内に該当する情報が一つもなければ、空の配列 [] を返してください。
-      """);
+      """;
+
+      // .arbファイルから翻訳された「指示部分」を取得
+      final String localizedInstruction =
+          AppLocalizations.of(context)!.geminiPromptInstruction;
+
+      // 指示とルールを結合して、最終的なプロンプトを作成
+      final prompt = TextPart(localizedInstruction + jsonFormatRules);
       final imagePart = DataPart('image/jpeg', imageBytes);
 
-      // 4. AIにリクエストを送信
+      // AIにリクエストを送信
       final response = await model.generateContent([
         Content.multi([prompt, imagePart]),
       ]);
 
-      // 5. 結果（JSON文字列）を解析し、変数に格納
+      // 結果（JSON文字列）を解析し、変数に格納
       final String jsonString = response.text ?? '[]';
       final dynamic decodedData = jsonDecode(jsonString); // まずdynamic型で受け取る
 
@@ -194,12 +200,12 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   Widget _buildResultsList() {
     // 1. 初期状態（まだ解析していない）の場合 ★★★
     if (_scheduleItems == null) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
           // 初期状態では何も表示しないか、操作を促すメッセージを表示
           child: Text(
-            '上のボタンを押して解析を開始してください。',
+            AppLocalizations.of(context)!.pressButtonToStartAnalysis,
             style: TextStyle(color: Colors.grey),
           ),
         ),
@@ -208,11 +214,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
 
     // 解析したが結果が空だった場合 ★★★
     if (_scheduleItems!.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
           child: Text(
-            "行事・準備物は抽出できませんでした。",
+            AppLocalizations.of(context)!.extractionFailed,
             style: TextStyle(fontSize: 16),
           ),
         ),
@@ -230,7 +236,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
 
         // 表示用の文字列を組み立てる
         final itemTypeString = item.type == EventItemType.event ? '行事' : '準備物';
-        final formattedDate = DateFormat('yyyy-MM-dd').format(item.date);
+        final formattedDate =
+            DateFormat(AppLocalizations.of(context)!.dateFormatHyphen)
+                .format(item.date);
 
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 4.0),
@@ -279,8 +287,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     // 4. 保存完了をユーザーに通知
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('選択した項目をカレンダーに保存しました！'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.savedToCalendar),
           backgroundColor: Colors.green,
         ),
       );
@@ -401,12 +409,12 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('エラー'),
-          content: const Text('広告の読み込みに失敗しました。\nネットワーク接続などを確認して、もう一度お試しください。'),
+          title: Text(AppLocalizations.of(context)!.error),
+          content: Text(AppLocalizations.of(context)!.adLoadFailedCheckNetwork),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK'),
+              child: Text(AppLocalizations.of(context)!.ok),
             ),
           ],
         ),
@@ -421,13 +429,13 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       barrierDismissible: false, // ダイアログ外をタップしても閉じない
       builder: (context) {
         return AlertDialog(
-          title: const Text('広告を見て解析を続ける'),
-          content: const SingleChildScrollView(
+          title: Text(AppLocalizations.of(context)!.watchAdToContinue),
+          content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                Text('AIによる解析を続けるには、短い動画広告をご覧いただく必要があります。'),
+                Text(AppLocalizations.of(context)!.watchAdDescription1),
                 SizedBox(height: 8),
-                Text('広告を視聴しますか？'),
+                Text(AppLocalizations.of(context)!.watchAdDescription2),
               ],
             ),
           ),
@@ -437,14 +445,14 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                 // 「キャンセル」が押されたことを示すためにfalseを返す
                 Navigator.of(context).pop(false);
               },
-              child: const Text('キャンセル'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
             ElevatedButton(
               onPressed: () {
                 // 「広告を見る」が押されたことを示すためにtrueを返す
                 Navigator.of(context).pop(true);
               },
-              child: const Text('広告を見る'),
+              child: Text(AppLocalizations.of(context)!.watchAd),
             ),
           ],
         );
@@ -470,7 +478,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       children: [
         // これまでのUIをScaffoldで構築
         Scaffold(
-          appBar: AppBar(title: const Text('AIで解析・登録')),
+          appBar: AppBar(
+              title:
+                  Text(AppLocalizations.of(context)!.analyzeAndRegisterWithAi)),
           body: Column(
             // ★ body全体をColumnで囲む
             children: [
@@ -481,7 +491,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                   child: ListView(
                     children: [
                       Text(
-                        '対象のおたより',
+                        AppLocalizations.of(context)!.targetOtayori,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
@@ -502,7 +512,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                         onPressed:
                             _isProcessing ? null : _handleAnalysisButtonPressed,
                         icon: const Icon(Icons.auto_awesome),
-                        label: const Text('このおたよりをAIで解析する'),
+                        label: Text(AppLocalizations.of(context)!
+                            .analyzeThisOtayoriWithAi),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -522,8 +533,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                                 _saveSelectedItems(); // ★保存メソッド
                               },
                         icon: const Icon(Icons.calendar_today),
-                        label:
-                            Text('選択した${_selectedEventIds.length}件をカレンダーに登録'),
+                        label: Text(
+                            '${AppLocalizations.of(context)!.selected}${_selectedEventIds.length}${AppLocalizations.of(context)!.itemsToRegister}'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green, // 色を緑に
                           foregroundColor: Colors.white,
@@ -554,7 +565,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
             // 画面全体を薄い黒で覆う
             color: Colors.black.withOpacity(0.5),
             // 中央にインジケーターとテキストを配置
-            child: const Center(
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -563,7 +574,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                   ),
                   SizedBox(height: 16),
                   Text(
-                    '文字を認識中...',
+                    AppLocalizations.of(context)!.recognizingText,
                     style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ],
@@ -575,7 +586,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         if (_isWaitingForAd)
           Container(
             color: Colors.black.withOpacity(0.5),
-            child: const Center(
+            child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -584,7 +595,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                   ),
                   SizedBox(height: 16),
                   Text(
-                    '広告を準備しています...',
+                    AppLocalizations.of(context)!.preparingAd,
                     style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ],

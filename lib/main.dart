@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'l10n/app_localizations.dart';
 import 'screens/home_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -46,16 +46,8 @@ class OtayoriPocketApp extends ConsumerWidget {
         scaffoldBackgroundColor: Colors.grey[50],
       ),
       // 日本語ローカライズを有効化
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('ja', 'JP'),
-        // 将来的に英語や他言語を追加したい場合はここに足す
-        // Locale('en', 'US'),
-      ],
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: asyncValue.when(
         data: (_) => const HomeScreen(), // 完了したらHomeScreenへ
         loading: () => const Scaffold(

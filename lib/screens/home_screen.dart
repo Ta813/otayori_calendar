@@ -11,6 +11,7 @@ import 'otayori_list_screen.dart';
 import '../dialogs/add_event_dialog.dart';
 import '../providers/child_provider.dart'; // こども情報のProviderをインポート
 import '../widgets/banner_ad_widget.dart';
+import '../l10n/app_localizations.dart';
 
 enum CalendarDisplayMode { event, preparation }
 
@@ -65,7 +66,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('おたよりカレンダー'),
+        title: Text(AppLocalizations.of(context)!.homeScreenTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_alt_1),
@@ -76,16 +77,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               );
             },
-            tooltip: 'こどもを追加',
+            tooltip: AppLocalizations.of(context)!.addChild,
           ),
           IconButton(
             icon: const Icon(Icons.edit_calendar_outlined), // アイコンを変更
-            tooltip: '予定を手動で追加',
+            tooltip: AppLocalizations.of(context)!.addEventManually,
             onPressed: () {
               final children = ref.read(childProvider);
               if (children.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('先にお子さんを登録してください')),
+                  SnackBar(
+                      content: Text(AppLocalizations.of(context)!
+                          .pleaseRegisterChildFirst)),
                 );
                 return;
               }
@@ -111,15 +114,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             padding:
                 const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             child: SegmentedButton<CalendarDisplayMode>(
-              segments: const <ButtonSegment<CalendarDisplayMode>>[
+              segments: <ButtonSegment<CalendarDisplayMode>>[
                 ButtonSegment<CalendarDisplayMode>(
                   value: CalendarDisplayMode.event,
-                  label: Text('行事'),
+                  label: Text(AppLocalizations.of(context)!.event),
                   icon: Icon(Icons.celebration),
                 ),
                 ButtonSegment<CalendarDisplayMode>(
                   value: CalendarDisplayMode.preparation,
-                  label: Text('準備物'),
+                  label: Text(AppLocalizations.of(context)!.preparation),
                   icon: Icon(Icons.backpack),
                 ),
               ],
@@ -151,7 +154,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text(
-              '${DateFormat('yyyy年MM月dd日').format(_selectedDate)} の予定',
+              '${DateFormat(AppLocalizations.of(context)!.dateFormat).format(_selectedDate)} ${AppLocalizations.of(context)!.dailyScheduleTitle}',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
@@ -169,7 +172,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             MaterialPageRoute(builder: (context) => const OtayoriListScreen()),
           );
         },
-        tooltip: 'おたより一覧を見る',
+        tooltip: AppLocalizations.of(context)!.seeOtayoriList,
         child: const Icon(Icons.list_alt_rounded),
       ),
       bottomNavigationBar: const SafeArea(
@@ -190,7 +193,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }).toList();
 
     if (selectedDayEvents.isEmpty) {
-      return const Center(child: Text('この日のおたよりはありません。'));
+      return Center(
+          child: Text(AppLocalizations.of(context)!.noEventsForThisDay));
     }
 
     // 2. 子供の情報を取得
@@ -357,18 +361,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       barrierDismissible: false, // ダイアログ外をタップしても閉じない
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('予定の削除'),
-          content: const SingleChildScrollView(
+          title: Text(AppLocalizations.of(context)!.deleteEvent),
+          content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                Text('この予定を削除しますか？'),
-                Text('この操作は元に戻せません。'),
+                Text(AppLocalizations.of(context)!.deleteConfirmation),
+                Text(AppLocalizations.of(context)!.thisActionCannotBeUndone),
               ],
             ),
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('キャンセル'),
+              child: Text(AppLocalizations.of(context)!.cancel),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -377,7 +381,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               style: TextButton.styleFrom(
                 foregroundColor: Colors.red, // 文字色を赤にして警告
               ),
-              child: const Text('削除'),
+              child: Text(AppLocalizations.of(context)!.delete),
               onPressed: () {
                 // Riverpod経由で削除メソッドを呼び出す
                 ref.read(otayoriEventProvider.notifier).removeEvent(eventId);

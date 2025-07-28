@@ -1,7 +1,7 @@
 name: otayori_calendar
 description: "A new Flutter project."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: '>=3.4.0 <4.0.0' # Flutter 3.22以降の推奨SDKバージョン
@@ -36,6 +36,7 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - .env

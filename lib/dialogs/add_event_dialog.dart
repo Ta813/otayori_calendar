@@ -7,7 +7,7 @@ import 'package:intl/intl.dart'; // 日付フォーマットのためにイン�
 import '../models/child.dart';
 import '../models/otayori_event.dart';
 import '../providers/otayori_event_provider.dart';
-import '../constants/default_items.dart';
+import '../l10n/app_localizations.dart';
 
 // ★★★ 登録モードを定義するenum ★★★
 enum RegistrationMode { single, range }
@@ -103,7 +103,9 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
     final rawTitle = _titleController.text; // 入力欄の生のテキスト
     if (rawTitle.isEmpty || _selectedChildId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('タイトルとこどもを両方選択してください')),
+        SnackBar(
+            content:
+                Text(AppLocalizations.of(context)!.pleaseSelectTitleAndChild)),
       );
       return;
     }
@@ -152,13 +154,47 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
     Navigator.of(context).pop();
   }
 
+  String? _getWeekdayLabel(String WeekdayLabel, BuildContext context) {
+    switch (WeekdayLabel) {
+      case '月':
+        return AppLocalizations.of(context)!.monday;
+      case '火':
+        return AppLocalizations.of(context)!.tuesday;
+      case '水':
+        return AppLocalizations.of(context)!.wednesday;
+      case '木':
+        return AppLocalizations.of(context)!.thursday;
+      case '金':
+        return AppLocalizations.of(context)!.friday;
+      case '土':
+        return AppLocalizations.of(context)!.saturday;
+      case '日':
+        return AppLocalizations.of(context)!.sunday;
+      default:
+        return null;
+    }
+  }
+
+  String? _getCategory(String category, BuildContext context) {
+    switch (category) {
+      case '準備物':
+        return AppLocalizations.of(context)!.preparation;
+      case '行事':
+        return AppLocalizations.of(context)!.event;
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final allEvents = ref.watch(otayoriEventProvider);
 
     return AlertDialog(
       scrollable: true,
-      title: Text(_isEditMode ? '予定の編集' : '予定の追加'),
+      title: Text(_isEditMode
+          ? AppLocalizations.of(context)!.editEvent
+          : AppLocalizations.of(context)!.addEvent),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -184,9 +220,41 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
                     .where((event) => event.category == _category)
                     .map((event) => event.title)
                     .toSet();
+                final localizations = AppLocalizations.of(context)!;
                 final defaultItems = _category == '行事'
-                    ? defaultEventItems
-                    : defaultPreparationItems;
+                    ? [
+                        localizations.eventDefaultFieldTrip,
+                        localizations.eventDefaultSportsDay,
+                        localizations.eventDefaultRecital,
+                        localizations.eventDefaultMeeting,
+                        localizations.eventDefaultInterview,
+                        localizations.eventDefaultBirthday,
+                        localizations.eventDefaultMeasurement,
+                        localizations.eventDefaultDrill,
+                      ]
+                    : [
+                        localizations.preparationDefaultUniform,
+                        localizations.preparationDefaultGymClothes,
+                        localizations.preparationDefaultSmock,
+                        localizations.preparationDefaultHat,
+                        localizations.preparationDefaultBag,
+                        localizations.preparationDefaultBackpack,
+                        localizations.preparationDefaultIndoorShoes,
+                        localizations.preparationDefaultOutdoorShoes,
+                        localizations.preparationDefaultWaterBottle,
+                        localizations.preparationDefaultLunchBox,
+                        localizations.preparationDefaultChopstickSet,
+                        localizations.preparationDefaultCup,
+                        localizations.preparationDefaultToothbrush,
+                        localizations.preparationDefaultTowel,
+                        localizations.preparationDefaultHandkerchief,
+                        localizations.preparationDefaultTissues,
+                        localizations.preparationDefaultNotebook,
+                        localizations.preparationDefaultStickerBook,
+                        localizations.preparationDefaultNameTag,
+                        localizations.preparationDefaultHood,
+                        localizations.preparationDefaultClothesBag
+                      ];
                 final combinedItems =
                     {...historyItems, ...defaultItems}.toList();
 
@@ -213,8 +281,8 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
                   // ★ ここでAutocomplete管理下のコントローラを渡す
                   controller: fieldTextEditingController,
                   focusNode: fieldFocusNode,
-                  decoration: const InputDecoration(
-                    labelText: 'タイトル',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.title,
                     border: OutlineInputBorder(),
                   ),
                   // ★ 入力が変更されるたびに、Stateのコントローラも更新
@@ -241,8 +309,8 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
                     _selectedChildId = value;
                   });
                 },
-                decoration: const InputDecoration(
-                  labelText: 'だれの予定？',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.whoseEvent,
                   border: OutlineInputBorder(),
                 ),
                 // こどもが一人しかいない場合は、変更不可にする（お好みで）
@@ -258,8 +326,8 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
                   border: Border.all(color: Colors.grey),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
-                  '先にお子さまの登録が必要です。',
+                child: Text(
+                  AppLocalizations.of(context)!.childRegistrationRequired,
                   style: TextStyle(color: Colors.black54),
                 ),
               ),
@@ -267,22 +335,26 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
             DropdownButtonFormField<String>(
               value: _category,
               items: ['行事', '準備物']
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                  .map((c) => DropdownMenuItem(
+                      value: c, child: Text(_getCategory(c, context) ?? c)))
                   .toList(),
               onChanged: (v) => setState(() => _category = v!),
-              decoration: const InputDecoration(
-                  labelText: '種類は？', border: OutlineInputBorder()),
+              decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.category,
+                  border: OutlineInputBorder()),
             ),
             const Divider(height: 32),
 
             if (!_isEditMode) ...[
               // ★★★ 登録モード切替 ★★★
               SegmentedButton<RegistrationMode>(
-                segments: const [
+                segments: [
                   ButtonSegment(
-                      value: RegistrationMode.single, label: Text('単日')),
+                      value: RegistrationMode.single,
+                      label: Text(AppLocalizations.of(context)!.singleDay)),
                   ButtonSegment(
-                      value: RegistrationMode.range, label: Text('期間')),
+                      value: RegistrationMode.range,
+                      label: Text(AppLocalizations.of(context)!.period)),
                 ],
                 selected: {_mode},
                 onSelectionChanged: (newSelection) {
@@ -296,7 +368,7 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
 
             if (_mode == RegistrationMode.single)
               Text(
-                  '日付: ${DateFormat('yyyy/MM/dd').format(widget.selectedDate)}'),
+                  '${AppLocalizations.of(context)!.date}: ${DateFormat('yyyy/MM/dd').format(widget.selectedDate)}'),
 
             if (_mode == RegistrationMode.range)
               Column(
@@ -309,12 +381,12 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
                       TextButton(
                           onPressed: () => _pickDate(true),
                           child: Text(
-                              '開始: ${DateFormat('MM/dd').format(_startDate)}')),
+                              '${AppLocalizations.of(context)!.start}: ${DateFormat('MM/dd').format(_startDate)}')),
                       const Text('〜'),
                       TextButton(
                           onPressed: () => _pickDate(false),
                           child: Text(
-                              '終了: ${DateFormat('MM/dd').format(_endDate)}')),
+                              '${AppLocalizations.of(context)!.end}: ${DateFormat('MM/dd').format(_endDate)}')),
                     ],
                   ),
 
@@ -326,7 +398,9 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
                       return Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(_weekdayLabels[index]),
+                          Text(_getWeekdayLabel(
+                                  _weekdayLabels[index], context) ??
+                              _weekdayLabels[index]),
                           Checkbox(
                             value: _selectedWeekdays[index],
                             onChanged: (bool? value) {
@@ -347,8 +421,10 @@ class _AddEventDialogState extends ConsumerState<AddEventDialog> {
       actions: [
         TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('キャンセル')),
-        ElevatedButton(onPressed: _saveEvent, child: const Text('保存')),
+            child: Text(AppLocalizations.of(context)!.cancel)),
+        ElevatedButton(
+            onPressed: _saveEvent,
+            child: Text(AppLocalizations.of(context)!.save)),
       ],
     );
   }

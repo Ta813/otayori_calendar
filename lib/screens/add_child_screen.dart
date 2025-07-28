@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../providers/child_provider.dart';
 import '../models/child.dart';
+import '../l10n/app_localizations.dart';
 
 class AddChildScreen extends ConsumerStatefulWidget {
   final Child? childToEdit;
@@ -39,7 +40,7 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('色を選択'),
+        title: Text(AppLocalizations.of(context)!.selectColor),
         content: SingleChildScrollView(
           child: ColorPicker(
             pickerColor: _selectedColor,
@@ -53,7 +54,7 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
         ),
         actions: <Widget>[
           ElevatedButton(
-            child: const Text('決定'),
+            child: Text(AppLocalizations.of(context)!.confirm),
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -66,7 +67,7 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
   void _saveChild() {
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('名前を入力してください')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.pleaseEnterName)),
       );
       return;
     }
@@ -85,7 +86,7 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
           );
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('こどもが登録されました')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.childRegistered)),
     );
   }
 
@@ -95,11 +96,12 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('削除の確認'),
-          content: Text('「${child.name}」さんの情報を削除しますか？\nこの操作は元に戻せません。'),
+          title: Text(AppLocalizations.of(context)!.deleteConfirmation2),
+          content: Text(
+              '「${child.name}」${AppLocalizations.of(context)!.deleteChildConfirmation}'),
           actions: <Widget>[
             TextButton(
-              child: const Text('キャンセル'),
+              child: Text(AppLocalizations.of(context)!.cancel),
               onPressed: () {
                 Navigator.of(dialogContext).pop(); // ダイアログを閉じる
               },
@@ -108,7 +110,7 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
               style: TextButton.styleFrom(
                 foregroundColor: Colors.red, // 削除ボタンは赤色に
               ),
-              child: const Text('削除'),
+              child: Text(AppLocalizations.of(context)!.delete),
               onPressed: () {
                 // Providerの削除メソッドを呼び出す
                 ref.read(childProvider.notifier).removeChild(child.id);
@@ -128,7 +130,9 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditMode ? 'こどもの編集' : 'こどもの追加'), // タイトルを少し変更
+        title: Text(_isEditMode
+            ? AppLocalizations.of(context)!.editChild
+            : AppLocalizations.of(context)!.addChild2), // タイトルを少し変更
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -138,15 +142,16 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
             // --- 入力フォーム ---
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'あたらしい名前', // ラベルを少し変更
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context)!.newName, // ラベルを少し変更
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
             Row(
               children: [
-                const Text('テーマカラー', style: TextStyle(fontSize: 16)),
+                Text(AppLocalizations.of(context)!.themeColor,
+                    style: TextStyle(fontSize: 16)),
                 const Spacer(),
                 GestureDetector(
                   onTap: _showColorPickerDialog,
@@ -165,17 +170,17 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
             const SizedBox(height: 40),
 
             // 登録済みリストのセクションを追加
-            const Text(
-              '登録済みのこども',
+            Text(
+              AppLocalizations.of(context)!.registeredChildren,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Divider(height: 20),
 
             // リストが空の場合と、そうでない場合で表示を分ける
             children.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
-                      'まだ誰も登録されていません',
+                      AppLocalizations.of(context)!.noOneRegisteredYet,
                       style: TextStyle(color: Colors.grey),
                     ),
                   )
@@ -221,7 +226,7 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: const Text('この内容で保存する'),
+              child: Text(AppLocalizations.of(context)!.saveThisContent),
             ),
           ],
         ),

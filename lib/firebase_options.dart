@@ -59,4 +59,5 @@ class DefaultFirebaseOptions {
     projectId: 'otayori-calendar',
     storageBucket: 'otayori-calendar.firebasestorage.app',
   );
+
 }

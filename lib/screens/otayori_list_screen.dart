@@ -12,8 +12,8 @@ import '../models/otayori_image.dart';
 import 'analysis_screen.dart';
 import '../providers/child_provider.dart';
 import '../models/child.dart';
-import '../constants/default_otayori_titles.dart';
 import '../widgets/banner_ad_widget.dart';
+import '../l10n/app_localizations.dart';
 
 class OtayoriListScreen extends ConsumerStatefulWidget {
   const OtayoriListScreen({Key? key}) : super(key: key);
@@ -35,7 +35,7 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
 
     // タブのリストを一度だけ生成
     _tabs = <Tab>[
-      const Tab(text: '全員'),
+      Tab(text: AppLocalizations.of(context)!.allMembers),
       ...children.map((child) => Tab(text: child.name)).toList(),
     ];
 
@@ -67,11 +67,11 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
       // ボトムシートが開いている場合は、スキャナを起動する前に閉じる
       if (context.mounted) Navigator.of(context).pop();
 
-      // ★★★ 1. 返り値をnullableなリストとして受け取る ★★★
+      // 返り値をnullableなリストとして受け取る
       final List<String>? imagePaths =
           await CunningDocumentScanner.getPictures();
 
-      // ★★★ 2. nullまたは空のリストでないかチェックする ★★★
+      // nullまたは空のリストでないかチェックする
       // ユーザーがスキャンをキャンセルした場合などは、ここで処理を中断
       if (imagePaths == null || imagePaths.isEmpty) {
         print('スキャンがキャンセルされたか、画像がありません。');
@@ -86,12 +86,13 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
     } catch (e) {
       // エラー処理
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('スキャン中にエラーが発生しました: $e')),
+        SnackBar(
+            content: Text('${AppLocalizations.of(context)!.scanError}: $e')),
       );
     }
   }
 
-  // ★★★ 3. 画像を保存するロジックを共通メソッドに分離 ★★★
+  // 画像を保存するロジックを共通メソッド
   Future<void> _saveImage(
     File imageFile,
     String childId,
@@ -123,7 +124,9 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('画像の保存に失敗しました: $e')));
+        ).showSnackBar(SnackBar(
+            content:
+                Text('${AppLocalizations.of(context)!.imageSaveFailed}: $e')));
       }
     }
   }
@@ -134,7 +137,7 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
     final selectedChild = await showDialog<Child>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('どのお子さんのおたよりですか？'),
+        title: Text(AppLocalizations.of(context)!.whichChildOtayori),
         children: children
             .map((child) => SimpleDialogOption(
                   onPressed: () => Navigator.pop(context, child),
@@ -154,15 +157,15 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
             children: <Widget>[
               ListTile(
                 leading: const Icon(Icons.document_scanner), // アイコンを変更
-                title: const Text('スキャナで撮影'),
+                title: Text(AppLocalizations.of(context)!.scanWithScanner),
                 onTap: () {
-                  // ★★★ 4. スキャナ起動メソッドを呼び出すように変更 ★★★
+                  // スキャナ起動メソッドを呼び出す
                   _scanAndSaveDocument(context, ref, selectedChild.id);
                 },
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('ギャラリーから選択'),
+                title: Text(AppLocalizations.of(context)!.selectFromGallery),
                 onTap: () {
                   _pickImageFromGallery(context, ref, selectedChild.id);
                 },
@@ -180,18 +183,19 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('削除の確認'),
-          content: const Text('このおたよりを削除しますか？\nこの操作は元に戻せません。'),
+          title: Text(AppLocalizations.of(context)!.deleteConfirmation2),
+          content:
+              Text(AppLocalizations.of(context)!.deleteOtayoriConfirmation),
           actions: <Widget>[
             TextButton(
-              child: const Text('キャンセル'),
+              child: Text(AppLocalizations.of(context)!.cancel),
               onPressed: () {
                 Navigator.of(dialogContext).pop(); // ダイアログを閉じる
               },
             ),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('削除'),
+              child: Text(AppLocalizations.of(context)!.delete),
               onPressed: () {
                 // ProviderのremoveImageメソッドを呼び出して削除を実行
                 ref.read(otayoriImageProvider.notifier).removeImage(imageId);
@@ -258,7 +262,7 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
                         child: Text(
                           // intlパッケージを使って日付をフォーマット
                           DateFormat(
-                            'yyyy/MM/dd',
+                            AppLocalizations.of(context)!.dateFormatSlash,
                           ).format(otayori.savedDate),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
@@ -287,7 +291,7 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
                 child: Text(
                   otayori.title.isNotEmpty
                       ? otayori.title
-                      : 'タイトルなし', // タイトルが空の場合の表示
+                      : AppLocalizations.of(context)!.noTitle, // タイトルが空の場合の表示
                   style: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,
@@ -303,7 +307,8 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
 
   Widget _buildGroupedList(List<OtayoriImage> images) {
     if (images.isEmpty) {
-      return const Center(child: Text('このカテゴリのおたよりはありません。'));
+      return Center(
+          child: Text(AppLocalizations.of(context)!.noOtayoriInCategory));
     }
 
     // 1. 日付の新しい順にソート
@@ -312,7 +317,9 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
     // 2. 月ごとにグループ化
     final groupedImages = <String, List<OtayoriImage>>{};
     for (final image in images) {
-      final monthKey = DateFormat('yyyy年M月').format(image.savedDate);
+      final monthKey =
+          DateFormat(AppLocalizations.of(context)!.dateFormatYearMonth)
+              .format(image.savedDate);
       if (groupedImages[monthKey] == null) {
         groupedImages[monthKey] = [];
       }
@@ -348,6 +355,33 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
     );
   }
 
+  /// デフォルトのおたよりタイトルのリストを取得
+  List<String> _getDefaultOtayoriTitles(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    List<String> defaultOtayoriTitles = [
+      localizations.otayoriTitleDefaultClass,
+      localizations.otayoriTitleDefaultGrade,
+      localizations.otayoriTitleDefaultSchool,
+      localizations.otayoriTitleDefaultLunch,
+      localizations.otayoriTitleDefaultHealth,
+      localizations.otayoriTitleDefaultPta,
+      localizations.otayoriTitleDefaultApril,
+      localizations.otayoriTitleDefaultMay,
+      localizations.otayoriTitleDefaultJune,
+      localizations.otayoriTitleDefaultJuly,
+      localizations.otayoriTitleDefaultAugust,
+      localizations.otayoriTitleDefaultSeptember,
+      localizations.otayoriTitleDefaultOctober,
+      localizations.otayoriTitleDefaultNovember,
+      localizations.otayoriTitleDefaultDecember,
+      localizations.otayoriTitleDefaultJanuary,
+      localizations.otayoriTitleDefaultFebruary,
+      localizations.otayoriTitleDefaultMarch,
+    ];
+
+    return defaultOtayoriTitles;
+  }
+
   Future<String?> _promptForTitle(BuildContext context) async {
     final titleController = TextEditingController();
 
@@ -356,7 +390,7 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: const Text('おたよりのタイトルを入力'),
+          title: Text(AppLocalizations.of(context)!.enterOtayoriTitle),
           content: Autocomplete<String>(
             // 候補が選択された後、TextFieldに表示する文字列を整形する
             displayStringForOption: (String option) => option.split('(').first,
@@ -364,26 +398,29 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
               if (textEditingValue.text.isEmpty) {
                 return const Iterable<String>.empty();
               }
-              // 1. 過去の履歴のタイトルを取得（読み仮名なし）
+              // 過去の履歴のタイトルを取得（読み仮名なし）
               final historyTitles = ref
                   .read(otayoriImageProvider)
                   .map((o) => o.title)
                   .where((t) => t.isNotEmpty);
 
-              // 2. デフォルトのタイトルから、読み仮名を除いたリストを作成
+              List<String> defaultOtayoriTitles =
+                  _getDefaultOtayoriTitles(context);
+
+              // デフォルトのタイトルから、読み仮名を除いたリストを作成
               final defaultTitlesWithoutKana =
                   defaultOtayoriTitles.map((t) => t.split('(').first);
 
-              // 3. ２つのリストを結合し、重複を除外した「表示すべきタイトルのリスト」を作成
+              // ２つのリストを結合し、重複を除外した「表示すべきタイトルのリスト」を作成
               final uniqueTitles =
                   {...historyTitles, ...defaultTitlesWithoutKana}.toList();
 
-              // 4. デフォルトの「読み仮名付き」リストから、表示すべきタイトルに合致するものだけを検索対象とする
+              // デフォルトの「読み仮名付き」リストから、表示すべきタイトルに合致するものだけを検索対象とする
               final searchTargetList = defaultOtayoriTitles
                   .where((t) => uniqueTitles.contains(t.split('(').first))
                   .toList();
 
-              // 5. 検索対象リストから、ユーザーの入力に一致するものを返す
+              // 検索対象リストから、ユーザーの入力に一致するものを返す
               return searchTargetList.where((String option) {
                 // optionは 'クラスだより(くらすだより)' のような形式
                 return option
@@ -406,21 +443,23 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
                 controller: fieldTextEditingController,
                 focusNode: focusNode,
                 autofocus: true,
-                decoration: const InputDecoration(hintText: '例：7月号クラスだより'),
+                decoration: InputDecoration(
+                    hintText:
+                        AppLocalizations.of(context)!.exampleOtayoriTitle),
               );
             },
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(), // キャンセル
-              child: const Text('キャンセル'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
             ElevatedButton(
               onPressed: () {
                 // 入力されたテキストを返してダイアログを閉じる
                 Navigator.of(context).pop(titleController.text);
               },
-              child: const Text('決定'),
+              child: Text(AppLocalizations.of(context)!.confirm),
             ),
           ],
         );
@@ -436,7 +475,7 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
     final newTitle = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('タイトルの編集'),
+        title: Text(AppLocalizations.of(context)!.editTitle),
         content: Autocomplete<String>(
           // 候補が選択された後、TextFieldに表示する文字列を整形する
           displayStringForOption: (String option) => option.split('(').first,
@@ -450,6 +489,9 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
                 .read(otayoriImageProvider)
                 .map((o) => o.title)
                 .where((t) => t.isNotEmpty);
+
+            List<String> defaultOtayoriTitles =
+                _getDefaultOtayoriTitles(context);
 
             // 2. デフォルトのタイトルから、読み仮名を除いたリストを作成
             final defaultTitlesWithoutKana =
@@ -494,20 +536,21 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
               controller: fieldTextEditingController, // Autocompleteのコントローラを使用
               focusNode: focusNode,
               autofocus: true,
-              decoration: const InputDecoration(labelText: '新しいタイトル'),
+              decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.newTitle),
             );
           },
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('キャンセル'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop(titleController.text);
             },
-            child: const Text('保存'),
+            child: Text(AppLocalizations.of(context)!.save),
           ),
         ],
       ),
@@ -528,13 +571,13 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
 
     // タブのリストを動的に生成（「全員」タブを追加）
     final tabs = <Tab>[
-      const Tab(text: '全員'),
+      Tab(text: AppLocalizations.of(context)!.allMembers),
       ...children.map((child) => Tab(text: child.name)),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('おたより一覧'),
+        title: Text(AppLocalizations.of(context)!.otayoriListTitle),
         bottom: TabBar(
           controller: _tabController,
           tabs: tabs,
@@ -564,7 +607,7 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showImageSourceActionSheet(context, ref),
-        tooltip: '新しいおたよりを追加', // 修正済みのメソッドを呼ぶ
+        tooltip: AppLocalizations.of(context)!.addNewOtayori, // 修正済みのメソッドを呼ぶ
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: const SafeArea(
