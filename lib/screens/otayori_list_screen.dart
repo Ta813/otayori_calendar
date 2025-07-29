@@ -27,20 +27,35 @@ class _OtayoriListScreenState extends ConsumerState<OtayoriListScreen>
   late TabController _tabController;
   List<Tab> _tabs = []; // タブのリストをState変数として保持
 
+  // 初期化が一度だけ行われるようにするためのフラグを追加
+  bool _isTabsInitialized = false;
+
   @override
   void initState() {
     super.initState();
-    // initStateではref.readしか使えない
-    final children = ref.read(childProvider);
+  }
 
-    // タブのリストを一度だけ生成
-    _tabs = <Tab>[
-      Tab(text: AppLocalizations.of(context)!.allMembers),
-      ...children.map((child) => Tab(text: child.name)).toList(),
-    ];
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-    // TabControllerの初期化も一度だけ行う
-    _tabController = TabController(length: _tabs.length, vsync: this);
+    // 初期化がまだ行われていない場合のみ実行
+    if (!_isTabsInitialized) {
+      final children = ref.read(childProvider);
+      final localizations = AppLocalizations.of(context)!; // ここなら安全に呼べる
+
+      // タブのリストを生成
+      _tabs = <Tab>[
+        Tab(text: localizations.allMembers), // 多言語対応したテキストを使用
+        ...children.map((child) => Tab(text: child.name)).toList(),
+      ];
+
+      // TabControllerを初期化
+      _tabController = TabController(length: _tabs.length, vsync: this);
+
+      // 初期化が完了したことを記録
+      _isTabsInitialized = true;
+    }
   }
 
   @override

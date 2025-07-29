@@ -438,4 +438,10 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get otayoriTitleDefaultMarch => '3月号クラスだより(3がつごうくらすだより)';
+
+  @override
+  String get settingsLanguage => '言語設定';
+
+  @override
+  String get settings => '設定';
 }

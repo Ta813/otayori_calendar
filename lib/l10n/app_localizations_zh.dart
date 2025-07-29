@@ -437,4 +437,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get otayoriTitleDefaultMarch => '3月号班级通知(3yuehao banji tongzhi)';
+
+  @override
+  String get settingsLanguage => '语言设定';
+
+  @override
+  String get settings => '设置';
 }

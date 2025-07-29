@@ -142,5 +142,7 @@
     "otayoriTitleDefaultDecember": "December Class Newsletter(december class newsletter)",
     "otayoriTitleDefaultJanuary": "January Class Newsletter(january class newsletter)",
     "otayoriTitleDefaultFebruary": "February Class Newsletter(february class newsletter)",
-    "otayoriTitleDefaultMarch": "March Class Newsletter(march class newsletter)"
+    "otayoriTitleDefaultMarch": "March Class Newsletter(march class newsletter)",
+    "settingsLanguage": "Language Settings",
+    "settings": "Settings"
 }

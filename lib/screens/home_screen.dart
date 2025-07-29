@@ -12,6 +12,7 @@ import '../dialogs/add_event_dialog.dart';
 import '../providers/child_provider.dart'; // こども情報のProviderをインポート
 import '../widgets/banner_ad_widget.dart';
 import '../l10n/app_localizations.dart';
+import 'settings_screen.dart';
 
 enum CalendarDisplayMode { event, preparation }
 
@@ -34,6 +35,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentLocale =
+        Localizations.localeOf(context).toLanguageTag(); // 現在のロケールを取得
     // ref.watch() を使ってProviderからイベントのリストを取得
     // データが更新されると、このウィジェットは自動的に再描画される
     final List<OtayoriEvent> allEvents = ref.watch(otayoriEventProvider);
@@ -106,6 +109,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               );
             },
           ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
+            },
+            tooltip: AppLocalizations.of(context)!.settings,
+          ),
         ],
       ),
       body: Column(
@@ -150,6 +164,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             },
             // ★ 絞り込んだ後のデータを渡す
             events: eventsForCalendar,
+            locale: currentLocale,
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),

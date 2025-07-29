@@ -145,5 +145,7 @@
     "otayoriTitleDefaultDecember": "12月号クラスだより(12がつごうくらすだより)",
     "otayoriTitleDefaultJanuary": "1月号クラスだより(1がつごうくらすだより)",
     "otayoriTitleDefaultFebruary": "2月号クラスだより(2がつごうくらすだより)",
-    "otayoriTitleDefaultMarch": "3月号クラスだより(3がつごうくらすだより)"
+    "otayoriTitleDefaultMarch": "3月号クラスだより(3がつごうくらすだより)",
+    "settingsLanguage": "言語設定",
+    "settings" : "設定"
 }

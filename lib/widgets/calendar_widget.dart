@@ -12,6 +12,7 @@ class CalendarWidget extends ConsumerWidget {
   final DateTime focusedDay;
   final Map<DateTime, List<OtayoriEvent>> events;
   final void Function(DateTime)? onPageChanged;
+  final String? locale;
 
   CalendarWidget({
     Key? key,
@@ -20,6 +21,7 @@ class CalendarWidget extends ConsumerWidget {
     this.onPageChanged,
     required this.focusedDay,
     required this.events,
+    this.locale,
   }) : super(key: key);
 
   Widget _buildCellContent(BuildContext context, WidgetRef ref, DateTime day,
@@ -97,6 +99,7 @@ class CalendarWidget extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         return TableCalendar(
+          locale: locale,
           firstDay: DateTime.utc(2024, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),
           focusedDay: focusedDay,

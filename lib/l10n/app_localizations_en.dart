@@ -462,4 +462,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get otayoriTitleDefaultMarch =>
       'March Class Newsletter(march class newsletter)';
+
+  @override
+  String get settingsLanguage => 'Language Settings';
+
+  @override
+  String get settings => 'Settings';
 }

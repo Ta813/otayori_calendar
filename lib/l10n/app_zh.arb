@@ -142,5 +142,7 @@
     "otayoriTitleDefaultDecember": "12月号班级通知(12yuehao banji tongzhi)",
     "otayoriTitleDefaultJanuary": "1月号班级通知(1yuehao banji tongzhi)",
     "otayoriTitleDefaultFebruary": "2月号班级通知(2yuehao banji tongzhi)",
-    "otayoriTitleDefaultMarch": "3月号班级通知(3yuehao banji tongzhi)"
+    "otayoriTitleDefaultMarch": "3月号班级通知(3yuehao banji tongzhi)",
+    "settingsLanguage": "语言设定",
+    "settings" : "设置"
 }

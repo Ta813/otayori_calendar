@@ -7,10 +7,12 @@ import '../l10n/app_localizations.dart';
 
 class AddChildScreen extends ConsumerStatefulWidget {
   final Child? childToEdit;
+  final bool isFirstLaunch;
 
   const AddChildScreen({
     Key? key,
     this.childToEdit,
+    this.isFirstLaunch = false,
   }) : super(key: key);
 
   @override
@@ -130,9 +132,10 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: !widget.isFirstLaunch,
         title: Text(_isEditMode
             ? AppLocalizations.of(context)!.editChild
-            : AppLocalizations.of(context)!.addChild2), // タイトルを少し変更
+            : AppLocalizations.of(context)!.addChild),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
