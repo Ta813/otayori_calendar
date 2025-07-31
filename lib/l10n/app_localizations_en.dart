@@ -30,7 +30,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get preparation => 'Preparation';
 
   @override
-  String get dateFormat => 'MMMM dd, yyyy';
+  String get dateFormat => 'MM dd, yyyy';
 
   @override
   String get dailyScheduleTitle => '\'s Schedule';
@@ -99,7 +99,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noOtayoriInCategory => 'There are no printouts in this category.';
 
   @override
-  String get dateFormatYearMonth => 'MMMM yyyy';
+  String get dateFormatYearMonth => 'MM yyyy';
 
   @override
   String get enterOtayoriTitle => 'Enter printout title';
