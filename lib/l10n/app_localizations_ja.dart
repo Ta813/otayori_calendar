@@ -444,4 +444,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settings => '設定';
+
+  @override
+  String get welcomeMessage => 'おたよりカレンダーでは、こどもの登録が必要です。はじめに、お子さんの登録をお願いします。';
 }

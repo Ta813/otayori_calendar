@@ -200,6 +200,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  String? _getCategory(String category, BuildContext context) {
+    switch (category) {
+      case '準備物':
+        return AppLocalizations.of(context)!.preparation;
+      case '行事':
+        return AppLocalizations.of(context)!.event;
+      default:
+        return null;
+    }
+  }
+
   // 選択された日のイベントリストを表示するウィジェット
   Widget _buildEventList(List<OtayoriEvent> allEvents) {
     // 1. 表示対象日のイベントを絞り込む (変更なし)
@@ -258,7 +269,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     // カテゴリ名 (行事, 準備物)
                     Text(
-                      category,
+                      _getCategory(category, context) ?? category,
                       style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.black54,

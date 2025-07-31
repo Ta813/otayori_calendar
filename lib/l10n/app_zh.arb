@@ -144,5 +144,6 @@
     "otayoriTitleDefaultFebruary": "2月号班级通知(2yuehao banji tongzhi)",
     "otayoriTitleDefaultMarch": "3月号班级通知(3yuehao banji tongzhi)",
     "settingsLanguage": "语言设定",
-    "settings" : "设置"
+    "settings" : "设置",
+    "welcomeMessage": "欢迎使用校园通知日历！为了开始使用，需要先登录您的孩子信息。"
 }

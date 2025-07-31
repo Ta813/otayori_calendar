@@ -142,88 +142,116 @@ class _AddChildScreenState extends ConsumerState<AddChildScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- 入力フォーム ---
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: AppLocalizations.of(context)!.newName, // ラベルを少し変更
-                border: OutlineInputBorder(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (widget.isFirstLaunch)
+                      Container(
+                        padding: const EdgeInsets.all(12.0),
+                        margin: const EdgeInsets.only(bottom: 24.0),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(8.0),
+                          border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        child: Text(
+                          AppLocalizations.of(context)!
+                              .welcomeMessage, // 多言語対応したメッセージ
+                          style: TextStyle(color: Colors.blue.shade800),
+                        ),
+                      ),
+                    // --- 入力フォーム ---
+                    TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText:
+                            AppLocalizations.of(context)!.newName, // ラベルを少し変更
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Text(AppLocalizations.of(context)!.themeColor,
+                            style: TextStyle(fontSize: 16)),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: _showColorPickerDialog,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: _selectedColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 40),
+
+                    // 登録済みリストのセクションを追加
+                    Text(
+                      AppLocalizations.of(context)!.registeredChildren,
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const Divider(height: 20),
+
+                    // リストが空の場合と、そうでない場合で表示を分ける
+                    children.isEmpty
+                        ? Center(
+                            child: Text(
+                              AppLocalizations.of(context)!.noOneRegisteredYet,
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          )
+                        : Wrap(
+                            spacing: 8.0, // Chip間の横スペース
+                            runSpacing: 4.0, // Chip間の縦スペース
+                            children: children.map((child) {
+                              // 背景色に合わせて文字色を白か黒に自動調整
+                              final textColor =
+                                  child.color.computeLuminance() > 0.5
+                                      ? Colors.black
+                                      : Colors.white;
+
+                              return InputChip(
+                                label: Text(child.name),
+                                backgroundColor: child.color,
+                                labelStyle: TextStyle(color: textColor),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8.0),
+                                onPressed: _isEditMode
+                                    ? null
+                                    : () {
+                                        // 新規追加モードの時だけ編集画面に遷移
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                AddChildScreen(
+                                              childToEdit: child,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                // 削除アイコンの色を設定
+                                deleteIconColor: textColor.withOpacity(0.7),
+                                // onDeletedコールバックで確認ダイアログを呼び出す
+                                onDeleted: () {
+                                  _showDeleteConfirmationDialog(child);
+                                },
+                              );
+                            }).toList(),
+                          ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Text(AppLocalizations.of(context)!.themeColor,
-                    style: TextStyle(fontSize: 16)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: _showColorPickerDialog,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: _selectedColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-
-            // 登録済みリストのセクションを追加
-            Text(
-              AppLocalizations.of(context)!.registeredChildren,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const Divider(height: 20),
-
-            // リストが空の場合と、そうでない場合で表示を分ける
-            children.isEmpty
-                ? Center(
-                    child: Text(
-                      AppLocalizations.of(context)!.noOneRegisteredYet,
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  )
-                : Wrap(
-                    spacing: 8.0, // Chip間の横スペース
-                    runSpacing: 4.0, // Chip間の縦スペース
-                    children: children.map((child) {
-                      // 背景色に合わせて文字色を白か黒に自動調整
-                      final textColor = child.color.computeLuminance() > 0.5
-                          ? Colors.black
-                          : Colors.white;
-
-                      return InputChip(
-                        label: Text(child.name),
-                        backgroundColor: child.color,
-                        labelStyle: TextStyle(color: textColor),
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        onPressed: _isEditMode
-                            ? null
-                            : () {
-                                // 新規追加モードの時だけ編集画面に遷移
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => AddChildScreen(
-                                      childToEdit: child,
-                                    ),
-                                  ),
-                                );
-                              },
-                        // 削除アイコンの色を設定
-                        deleteIconColor: textColor.withOpacity(0.7),
-                        // onDeletedコールバックで確認ダイアログを呼び出す
-                        onDeleted: () {
-                          _showDeleteConfirmationDialog(child);
-                        },
-                      );
-                    }).toList(),
-                  ),
-
-            const Spacer(),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _saveChild,
               style: ElevatedButton.styleFrom(

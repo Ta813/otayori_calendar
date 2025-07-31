@@ -443,4 +443,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settings => '设置';
+
+  @override
+  String get welcomeMessage => '欢迎使用校园通知日历！为了开始使用，需要先登录您的孩子信息。';
 }

@@ -7,7 +7,7 @@
     "pleaseRegisterChildFirst": "Please register a child first",
     "event": "Event",
     "preparation": "Preparation",
-    "dateFormat": "MMMM dd, yyyy",
+    "dateFormat": "MM dd, yyyy",
     "dailyScheduleTitle": "'s Schedule",
     "seeOtayoriList": "View Printouts",
     "noEventsForThisDay": "No events for this day.",
@@ -29,7 +29,7 @@
     "dateFormatSlash": "yyyy/MM/dd",
     "noTitle": "No Title",
     "noOtayoriInCategory": "There are no printouts in this category.",
-    "dateFormatYearMonth": "MMMM yyyy",
+    "dateFormatYearMonth": "MM yyyy",
     "enterOtayoriTitle": "Enter printout title",
     "exampleOtayoriTitle": "e.g., July Class Newsletter",
     "confirm": "Confirm",
@@ -144,5 +144,6 @@
     "otayoriTitleDefaultFebruary": "February Class Newsletter(february class newsletter)",
     "otayoriTitleDefaultMarch": "March Class Newsletter(march class newsletter)",
     "settingsLanguage": "Language Settings",
-    "settings": "Settings"
+    "settings": "Settings",
+    "welcomeMessage": "Welcome to Otayori Calendar! To get started, please register a child."
 }

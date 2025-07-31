@@ -468,4 +468,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings => 'Settings';
+
+  @override
+  String get welcomeMessage =>
+      'Welcome to Otayori Calendar! To get started, please register a child.';
 }

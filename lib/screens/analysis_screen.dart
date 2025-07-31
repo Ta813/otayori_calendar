@@ -75,9 +75,6 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     // 画像ファイルがなければ処理を中断
     if (_imageFile == null) return;
 
-    // 解析回数をここでインクリメント
-    await _incrementAndSaveCount();
-
     setState(() {
       _isProcessing = true;
       _scheduleItems = null; // 解析前に前の結果をクリア
@@ -184,16 +181,51 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         }
       }
 
+      // 解析回数をここでインクリメント
+      await _incrementAndSaveCount();
+
       setState(() {
         _scheduleItems = newScheduleItems; // 新しく生成したフラットなリストをstateに設定
         _isProcessing = false;
         // _recognizedTextの更新は不要になるか、デバッグ用に残しても良い
       });
+    } on GenerativeAIException catch (e) {
+      print('AIサーバーでエラーが発生しました: $e');
+      // ユーザーに分かりやすいメッセージを表示
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('サーバーが混み合っています。しばらくしてから、もう一度お試しください。'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     } catch (e) {
+      print('予期せぬエラーが発生しました: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('解析中に不明なエラーが発生しました。'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      // 最後に必ず処理中フラグをfalseに戻す
       setState(() {
-        print('エラーが発生しました: $e');
         _isProcessing = false;
       });
+    }
+  }
+
+  String? _getCategory(String category, BuildContext context) {
+    switch (category) {
+      case '準備物':
+        return AppLocalizations.of(context)!.preparation;
+      case '行事':
+        return AppLocalizations.of(context)!.event;
+      default:
+        return null;
     }
   }
 
@@ -254,7 +286,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
               });
             },
             title: Text(item.content), // 行事名や持ち物名
-            subtitle: Text('$formattedDate - $itemTypeString'), // 日付と種類
+            subtitle: Text(
+                '$formattedDate - ${_getCategory(itemTypeString, context)}'), // 日付と種類
           ),
         );
       },

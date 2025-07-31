@@ -147,5 +147,6 @@
     "otayoriTitleDefaultFebruary": "2月号クラスだより(2がつごうくらすだより)",
     "otayoriTitleDefaultMarch": "3月号クラスだより(3がつごうくらすだより)",
     "settingsLanguage": "言語設定",
-    "settings" : "設定"
+    "settings" : "設定",
+    "welcomeMessage": "おたよりカレンダーでは、こどもの登録が必要です。はじめに、お子さんの登録をお願いします。"
 }
